@@ -229,37 +229,36 @@ function App() {
 
   return (
     <div className="game-container">
-      <div className="header">
-        <h1 className="title">Math Adventure</h1>
-        <div className="header-stats">
-          <div className="level-badge">Level {level}</div>
-          <div className="score-badge">Score: {score}</div>
+      <div className="top-bar">
+        <div className="top-bar-left">
+          <h1 className="title">Math Adventure</h1>
+        </div>
+        <div className="top-bar-right">
+          {pokemonData && (
+            <div className="pokemon-compact">
+              <img
+                src={pokemonData.sprites.front_default}
+                alt={pokemonData.name}
+                className="pokemon-sprite-small"
+              />
+              <div className="pokemon-info">
+                <div className="pokemon-name-small">{pokemonData.name}</div>
+                <div className="xp-bar-small">
+                  <div
+                    className="xp-bar-fill-small"
+                    style={{ width: `${(xp / getXpForNextLevel(level)) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="xp-text-small">{xp}/{getXpForNextLevel(level)} XP</div>
+              </div>
+            </div>
+          )}
+          <div className="stats-compact">
+            <div className="level-badge-small">Lv {level}</div>
+            <div className="score-badge-small">{score}</div>
+          </div>
         </div>
       </div>
-
-      {pokemonData && (
-        <div className="pokemon-container">
-          <div className="pokemon-display">
-            <img
-              src={pokemonData.sprites.front_default}
-              alt={pokemonData.name}
-              className="pokemon-sprite"
-            />
-            <div className="pokemon-name">{pokemonData.name}</div>
-          </div>
-          <div className="xp-container">
-            <div className="xp-bar-background">
-              <div
-                className="xp-bar-fill"
-                style={{ width: `${(xp / getXpForNextLevel(level)) * 100}%` }}
-              ></div>
-            </div>
-            <div className="xp-text">
-              {xp} / {getXpForNextLevel(level)} XP
-            </div>
-          </div>
-        </div>
-      )}
 
       {showEvolution && pokemonData && (
         <div className="evolution-overlay">
