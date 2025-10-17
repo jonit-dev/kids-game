@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { MdSkipNext } from 'react-icons/md'
 import './App.css'
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [pokemonStage, setPokemonStage] = useState(0)
   const [showEvolution, setShowEvolution] = useState(false)
   const [showDevolution, setShowDevolution] = useState(false)
+  const [showSwap, setShowSwap] = useState(false)
   const [pokemonData, setPokemonData] = useState(null)
   const [capturedPokemon, setCapturedPokemon] = useState(() => {
     const saved = localStorage.getItem('capturedPokemon')
@@ -76,8 +78,11 @@ function App() {
     )
   }
 
-  const getDifficultyRanges = (op, diff) => {
-    const ranges = {
+  const getDifficultyRanges = (op, diff, currentLevel) => {
+    // Scale factor increases with level (1.0 at level 1, up to 2.0 at level 20)
+    const scaleFactor = Math.min(1 + (currentLevel - 1) * 0.05, 2.0)
+
+    const baseRanges = {
       '+': {
         easy: { n1: [1, 5], n2: [1, 5] },
         medium: { n1: [5, 10], n2: [5, 10] },
@@ -99,7 +104,30 @@ function App() {
         hard: { n1: [2, 4], n2: [2, 4] }       // up to 16÷4
       }
     }
-    return ranges[op][diff]
+
+    const baseRange = baseRanges[op][diff]
+
+    // Apply scale factor to addition and subtraction (not multiplication/division to keep visual manageable)
+    if (op === '+' || op === '-') {
+      return {
+        n1: [baseRange.n1[0], Math.floor(baseRange.n1[1] * scaleFactor)],
+        n2: [baseRange.n2[0], Math.floor(baseRange.n2[1] * scaleFactor)]
+      }
+    } else if (op === '×' && currentLevel > 10) {
+      // For higher levels, allow slightly larger multiplication
+      return {
+        n1: [baseRange.n1[0], Math.min(baseRange.n1[1] + Math.floor((currentLevel - 10) / 3), 7)],
+        n2: [baseRange.n2[0], Math.min(baseRange.n2[1] + Math.floor((currentLevel - 10) / 3), 7)]
+      }
+    } else if (op === '÷' && currentLevel > 10) {
+      // For higher levels, allow slightly larger division
+      return {
+        n1: [baseRange.n1[0], Math.min(baseRange.n1[1] + Math.floor((currentLevel - 10) / 4), 5)],
+        n2: [baseRange.n2[0], Math.min(baseRange.n2[1] + Math.floor((currentLevel - 10) / 4), 5)]
+      }
+    }
+
+    return baseRange
   }
 
   const getScoreForDifficulty = (diff) => {
@@ -130,14 +158,32 @@ function App() {
   }
 
   const generateProblem = () => {
-    // Randomly pick a difficulty for this question
-    const difficulties = ['easy', 'medium', 'hard']
-    const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)]
+    // Determine difficulty based on level - progressively harder as level increases
+    let randomDifficulty
+    if (level <= 3) {
+      // Levels 1-3: Only easy
+      randomDifficulty = 'easy'
+    } else if (level <= 6) {
+      // Levels 4-6: Easy and medium
+      randomDifficulty = Math.random() < 0.5 ? 'easy' : 'medium'
+    } else if (level <= 10) {
+      // Levels 7-10: Medium and some hard
+      const rand = Math.random()
+      if (rand < 0.3) randomDifficulty = 'easy'
+      else if (rand < 0.7) randomDifficulty = 'medium'
+      else randomDifficulty = 'hard'
+    } else {
+      // Level 11+: All difficulties with more hard questions
+      const rand = Math.random()
+      if (rand < 0.2) randomDifficulty = 'easy'
+      else if (rand < 0.5) randomDifficulty = 'medium'
+      else randomDifficulty = 'hard'
+    }
     setCurrentQuestionDifficulty(randomDifficulty)
 
     const availableOps = getOperationsForDifficulty(randomDifficulty)
     const newOp = availableOps[Math.floor(Math.random() * availableOps.length)]
-    const range = getDifficultyRanges(newOp, randomDifficulty)
+    const range = getDifficultyRanges(newOp, randomDifficulty, level)
 
     let n1, n2
 
@@ -204,15 +250,15 @@ function App() {
 
         setCurrentChainIndex(newChainIndex)
         setPokemonStage(0)
-        setLevel(1)
+        setLevel(level + 1) // Keep leveling up instead of resetting to 1
         setHealth(0)
         setMaxHP(50)
-        setShowEvolution(true)
+        setShowSwap(true) // Use swap animation instead of evolution
 
         setTimeout(() => {
           fetchPokemon(evolutionChains[newChainIndex].stages[0])
           setTimeout(() => {
-            setShowEvolution(false)
+            setShowSwap(false)
           }, 3000)
         }, 500)
       } else {
@@ -496,7 +542,7 @@ function App() {
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type answer"
+            placeholder="Type your answer"
             autoFocus
           />
           <button
@@ -508,8 +554,8 @@ function App() {
           </button>
         </div>
 
-        <button className="skip-button" onClick={generateProblem}>
-          Skip to Next
+        <button className="skip-button" onClick={generateProblem} title="Skip to next question">
+          <MdSkipNext />
         </button>
 
         {showCelebration && (
@@ -554,6 +600,22 @@ function App() {
             />
             <div className="devolution-text">
               {pokemonData.name} devolved...
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSwap && pokemonData && (
+        <div className="swap-overlay">
+          <div className="swap-content">
+            <h2 className="swap-title">New Adventure!</h2>
+            <img
+              src={pokemonData.sprites.front_default}
+              alt={pokemonData.name}
+              className="swap-sprite"
+            />
+            <div className="swap-text">
+              A new Pokemon joins you!
             </div>
           </div>
         </div>
