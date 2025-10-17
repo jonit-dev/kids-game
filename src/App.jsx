@@ -9,6 +9,7 @@ function App() {
   const [score, setScore] = useState(0)
   const [message, setMessage] = useState('Let\'s learn math!')
   const [showCelebration, setShowCelebration] = useState(false)
+  const [currentEmoji, setCurrentEmoji] = useState('🍎')
 
   const encouragementMessages = [
     'Great job!',
@@ -28,13 +29,16 @@ function App() {
     '🐠', '🐢', '🐶', '🐱', '🐰'
   ]
 
-  const VisualCounter = ({ count, color }) => {
-    const emoji = visualObjects[Math.floor(Math.random() * visualObjects.length)]
+  const VisualCounter = ({ count, crossOut = false }) => {
     return (
       <div className="visual-counter">
         {[...Array(count)].map((_, i) => (
-          <span key={i} className="visual-object" style={{ animationDelay: `${i * 0.1}s` }}>
-            {emoji}
+          <span
+            key={i}
+            className={`visual-object ${crossOut ? 'crossed-out' : ''}`}
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
+            {currentEmoji}
           </span>
         ))}
       </div>
@@ -47,12 +51,16 @@ function App() {
 
     let n1, n2
     if (newOp === '+') {
-      n1 = Math.floor(Math.random() * 10) + 1
-      n2 = Math.floor(Math.random() * 10) + 1
+      n1 = Math.floor(Math.random() * 5) + 1  // 1-5
+      n2 = Math.floor(Math.random() * 5) + 1  // 1-5
     } else {
-      n1 = Math.floor(Math.random() * 10) + 5
-      n2 = Math.floor(Math.random() * n1) + 1
+      n1 = Math.floor(Math.random() * 5) + 3  // 3-7
+      n2 = Math.floor(Math.random() * Math.min(n1, 3)) + 1  // smaller number to subtract
     }
+
+    // Pick a random emoji for this problem
+    const randomEmoji = visualObjects[Math.floor(Math.random() * visualObjects.length)]
+    setCurrentEmoji(randomEmoji)
 
     setNum1(n1)
     setNum2(n2)
@@ -104,22 +112,50 @@ function App() {
         </div>
 
         <div className="problem-container">
-          <div className="visual-problem">
-            <div className="visual-group">
-              <span className="number">{num1}</span>
-              <VisualCounter count={num1} />
+          {operation === '+' ? (
+            <div className="visual-problem">
+              <div className="visual-group">
+                <span className="number">{num1}</span>
+                <VisualCounter count={num1} />
+              </div>
+
+              <span className="operator">{operation}</span>
+
+              <div className="visual-group">
+                <span className="number">{num2}</span>
+                <VisualCounter count={num2} />
+              </div>
+
+              <span className="equals">=</span>
+              <span className="question">?</span>
             </div>
-
-            <span className="operator">{operation}</span>
-
-            <div className="visual-group">
-              <span className="number">{num2}</span>
-              <VisualCounter count={num2} />
+          ) : (
+            <div className="visual-problem subtraction">
+              <div className="subtraction-explanation">
+                Start with <strong>{num1}</strong> {currentEmoji}, then take away <strong>{num2}</strong> {currentEmoji}
+              </div>
+              <div className="visual-group-full">
+                <div className="visual-counter-subtraction">
+                  {[...Array(num1)].map((_, i) => (
+                    <span
+                      key={i}
+                      className={`visual-object ${i >= num1 - num2 ? 'crossed-out' : ''}`}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      {currentEmoji}
+                    </span>
+                  ))}
+                </div>
+                <div className="subtraction-math">
+                  <span className="number">{num1}</span>
+                  <span className="operator">{operation}</span>
+                  <span className="number">{num2}</span>
+                  <span className="equals">=</span>
+                  <span className="question">?</span>
+                </div>
+              </div>
             </div>
-
-            <span className="equals">=</span>
-            <span className="question">?</span>
-          </div>
+          )}
         </div>
 
         <div className="answer-section">
