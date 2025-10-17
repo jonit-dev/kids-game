@@ -11,6 +11,26 @@ function App() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [currentEmoji, setCurrentEmoji] = useState('🍎')
   const [currentQuestionDifficulty, setCurrentQuestionDifficulty] = useState('easy')
+  const [level, setLevel] = useState(1)
+  const [xp, setXp] = useState(0)
+  const [pokemonStage, setPokemonStage] = useState(0)
+  const [showEvolution, setShowEvolution] = useState(false)
+  const [pokemonData, setPokemonData] = useState(null)
+
+  // Pokemon evolution chains - using PokeAPI IDs
+  const evolutionChains = [
+    { name: 'Squirtle', stages: [7, 8, 9] },      // Squirtle -> Wartortle -> Blastoise
+    { name: 'Charmander', stages: [4, 5, 6] },    // Charmander -> Charmeleon -> Charizard
+    { name: 'Bulbasaur', stages: [1, 2, 3] },     // Bulbasaur -> Ivysaur -> Venusaur
+    { name: 'Pikachu', stages: [172, 25, 26] },   // Pichu -> Pikachu -> Raichu
+    { name: 'Eevee', stages: [133, 134, 135] }    // Eevee -> Vaporeon -> Jolteon
+  ]
+
+  const [currentChain] = useState(evolutionChains[Math.floor(Math.random() * evolutionChains.length)])
+
+  const getXpForNextLevel = (currentLevel) => {
+    return currentLevel * 10 // 10 XP for level 1, 20 for level 2, etc.
+  }
 
   const encouragementMessages = [
     'Great job!',
@@ -127,7 +147,46 @@ function App() {
 
   useEffect(() => {
     generateProblem()
+    fetchPokemon(currentChain.stages[pokemonStage])
   }, [])
+
+  const fetchPokemon = async (pokemonId) => {
+    try {
+      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`)
+      const data = await response.json()
+      setPokemonData(data)
+    } catch (error) {
+      console.error('Error fetching Pokemon:', error)
+    }
+  }
+
+  const addXp = (points) => {
+    const newXp = xp + points
+    const xpNeeded = getXpForNextLevel(level)
+
+    if (newXp >= xpNeeded) {
+      // Level up!
+      const newLevel = level + 1
+      setLevel(newLevel)
+      setXp(newXp - xpNeeded)
+
+      // Check for evolution (every 5 levels)
+      if (newLevel % 5 === 0 && pokemonStage < currentChain.stages.length - 1) {
+        const newStage = pokemonStage + 1
+        setPokemonStage(newStage)
+        setShowEvolution(true)
+
+        setTimeout(() => {
+          fetchPokemon(currentChain.stages[newStage])
+          setTimeout(() => {
+            setShowEvolution(false)
+          }, 3000)
+        }, 1000)
+      }
+    } else {
+      setXp(newXp)
+    }
+  }
 
   const checkAnswer = () => {
     let correctAnswer
@@ -145,8 +204,9 @@ function App() {
       const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)]
       const points = getScoreForDifficulty(currentQuestionDifficulty)
       const diffLabel = currentQuestionDifficulty.charAt(0).toUpperCase() + currentQuestionDifficulty.slice(1)
-      setMessage(`${randomMessage} +${points} point${points > 1 ? 's' : ''}! (${diffLabel})`)
+      setMessage(`${randomMessage} +${points} XP! (${diffLabel})`)
       setScore(score + points)
+      addXp(points)
       setShowCelebration(true)
 
       setTimeout(() => {
@@ -169,8 +229,51 @@ function App() {
     <div className="game-container">
       <div className="header">
         <h1 className="title">Math Adventure</h1>
-        <div className="score-badge">Score: {score}</div>
+        <div className="header-stats">
+          <div className="level-badge">Level {level}</div>
+          <div className="score-badge">Score: {score}</div>
+        </div>
       </div>
+
+      {pokemonData && (
+        <div className="pokemon-container">
+          <div className="pokemon-display">
+            <img
+              src={pokemonData.sprites.front_default}
+              alt={pokemonData.name}
+              className="pokemon-sprite"
+            />
+            <div className="pokemon-name">{pokemonData.name}</div>
+          </div>
+          <div className="xp-container">
+            <div className="xp-bar-background">
+              <div
+                className="xp-bar-fill"
+                style={{ width: `${(xp / getXpForNextLevel(level)) * 100}%` }}
+              ></div>
+            </div>
+            <div className="xp-text">
+              {xp} / {getXpForNextLevel(level)} XP
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEvolution && pokemonData && (
+        <div className="evolution-overlay">
+          <div className="evolution-content">
+            <h2 className="evolution-title">Evolution!</h2>
+            <img
+              src={pokemonData.sprites.front_default}
+              alt={pokemonData.name}
+              className="evolution-sprite"
+            />
+            <div className="evolution-text">
+              {pokemonData.name} is evolving!
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="game-content">
         <div className={`message ${showCelebration ? 'celebration' : ''}`}>
