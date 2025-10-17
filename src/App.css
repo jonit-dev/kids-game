@@ -22,8 +22,49 @@ body {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-right {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.difficulty-selector {
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 8px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.diff-btn {
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  background: transparent;
+  color: #667eea;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.diff-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.diff-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  transform: scale(1.05);
 }
 
 .title {
@@ -168,11 +209,19 @@ body {
   }
 }
 
-.subtraction-explanation {
+.operation-explanation {
   font-size: 1.2rem;
   color: #667eea;
   margin-bottom: 20px;
   font-weight: bold;
+}
+
+.operation-math {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  font-size: 3rem;
+  margin-top: 20px;
 }
 
 .visual-group-full {
@@ -193,6 +242,83 @@ body {
   background: rgba(255, 255, 255, 0.5);
   border-radius: 15px;
   min-height: 80px;
+}
+
+.multiplication-grid {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+}
+
+.multiplication-group {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(78, 205, 196, 0.2);
+  border: 3px solid #4ECDC4;
+  border-radius: 12px;
+  animation: slide-in 0.4s ease-out backwards;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.division-grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+}
+
+.division-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  background: rgba(255, 182, 193, 0.3);
+  border: 3px solid #FFB6C1;
+  border-radius: 12px;
+  animation: fade-in 0.4s ease-out backwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.group-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #FF6B6B;
+  text-align: center;
+}
+
+.division-items {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .subtraction-math {
@@ -349,13 +475,36 @@ body {
 }
 
 @media (max-width: 768px) {
+  .header {
+    justify-content: center;
+  }
+
   .title {
     font-size: 2rem;
   }
 
+  .header-right {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .difficulty-selector {
+    gap: 5px;
+    padding: 6px;
+  }
+
+  .diff-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
   .visual-problem {
-    font-size: 3rem;
+    font-size: 2.5rem;
     gap: 10px;
+  }
+
+  .operation-explanation {
+    font-size: 1rem;
   }
 
   .visual-counter {
@@ -365,6 +514,20 @@ body {
 
   .visual-object {
     font-size: 1.5rem;
+  }
+
+  .multiplication-group,
+  .division-group {
+    padding: 8px;
+  }
+
+  .group-label {
+    font-size: 0.9rem;
+  }
+
+  .operation-math {
+    font-size: 2rem;
+    gap: 10px;
   }
 
   .problem {
@@ -379,11 +542,11 @@ body {
   }
 
   .operator, .equals {
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
 
   .question {
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
 
   .answer-input {
