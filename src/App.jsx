@@ -21,6 +21,26 @@ function App() {
     'Super smart!'
   ]
 
+  // Visual representations - fun objects for kids to count
+  const visualObjects = [
+    '🍎', '🍌', '🍊', '🍇', '🍓',
+    '⚽', '🎈', '⭐', '🌸', '🦋',
+    '🐠', '🐢', '🐶', '🐱', '🐰'
+  ]
+
+  const VisualCounter = ({ count, color }) => {
+    const emoji = visualObjects[Math.floor(Math.random() * visualObjects.length)]
+    return (
+      <div className="visual-counter">
+        {[...Array(count)].map((_, i) => (
+          <span key={i} className="visual-object" style={{ animationDelay: `${i * 0.1}s` }}>
+            {emoji}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
   const generateProblem = () => {
     const operations = ['+', '-']
     const newOp = operations[Math.floor(Math.random() * operations.length)]
@@ -84,10 +104,19 @@ function App() {
         </div>
 
         <div className="problem-container">
-          <div className="problem">
-            <span className="number">{num1}</span>
+          <div className="visual-problem">
+            <div className="visual-group">
+              <span className="number">{num1}</span>
+              <VisualCounter count={num1} />
+            </div>
+
             <span className="operator">{operation}</span>
-            <span className="number">{num2}</span>
+
+            <div className="visual-group">
+              <span className="number">{num2}</span>
+              <VisualCounter count={num2} />
+            </div>
+
             <span className="equals">=</span>
             <span className="question">?</span>
           </div>

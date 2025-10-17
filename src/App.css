@@ -91,6 +91,56 @@ body {
   margin: 40px 0;
 }
 
+.visual-problem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 4rem;
+  font-weight: bold;
+  flex-wrap: wrap;
+}
+
+.visual-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.visual-counter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 200px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  min-height: 60px;
+}
+
+.visual-object {
+  font-size: 2rem;
+  animation: pop-in 0.3s ease-out backwards;
+  transition: transform 0.2s ease;
+}
+
+.visual-object:hover {
+  transform: scale(1.2);
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .problem {
   display: flex;
   align-items: center;
@@ -242,6 +292,20 @@ body {
     font-size: 2rem;
   }
 
+  .visual-problem {
+    font-size: 3rem;
+    gap: 10px;
+  }
+
+  .visual-counter {
+    max-width: 150px;
+    gap: 5px;
+  }
+
+  .visual-object {
+    font-size: 1.5rem;
+  }
+
   .problem {
     font-size: 3rem;
     gap: 10px;
@@ -250,7 +314,7 @@ body {
   .number {
     padding: 15px 20px;
     min-width: 80px;
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
 
   .operator, .equals {
