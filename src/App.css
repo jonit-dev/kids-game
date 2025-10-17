@@ -12,44 +12,101 @@ body {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
   padding: 20px;
 }
 
-.top-bar {
+.game-layout {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 1400px;
+  height: 90vh;
+  min-height: 600px;
+}
+
+/* Left Panel - Pokemon */
+.pokemon-panel {
+  flex: 0 0 350px;
+  background: #4a5fc1;
+  border-radius: 25px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* Custom scrollbar styling */
+.pokemon-panel::-webkit-scrollbar,
+.game-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pokemon-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.pokemon-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.pokemon-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.game-panel::-webkit-scrollbar-track {
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 10px;
+}
+
+.game-panel::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+}
+
+.game-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  padding: 15px 25px;
-  background: rgba(255, 255, 255, 0.95);
+}
+
+.panel-title {
+  color: white;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.level-badge {
+  background: linear-gradient(135deg, #FFD93D, #FFA07A);
+  color: #333;
+  padding: 8px 16px;
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  margin-bottom: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
-.stats-badges {
+.pokemon-display-card {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 20px;
   display: flex;
-  gap: 10px;
-}
-
-.pokemon-hero {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 30px;
-  width: 100%;
-  max-width: 700px;
-  padding: 30px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
-  border-radius: 25px;
-  border: 3px solid rgba(102, 126, 234, 0.4);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  margin-bottom: 25px;
+  gap: 15px;
 }
 
-.pokemon-sprite-hero {
+.pokemon-sprite-main {
   width: 200px;
   height: 200px;
   image-rendering: pixelated;
@@ -62,76 +119,151 @@ body {
   75% { transform: translateX(5px) translateY(5px); }
 }
 
-.pokemon-status {
-  flex: 1;
+.pokemon-name-main {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-transform: capitalize;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.health-section {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
-.pokemon-name-hero {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #667eea;
-  text-transform: capitalize;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.health-bar-container {
+.health-label-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
 }
 
 .health-label {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  color: #667eea;
-  min-width: 40px;
+  color: white;
+}
+
+.health-text {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
 }
 
 .health-bar-background {
-  flex: 1;
-  height: 35px;
-  background: #e0e0e0;
-  border-radius: 18px;
+  width: 100%;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
   overflow: hidden;
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.2);
-  border: 2px solid #ccc;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .health-bar-fill {
   height: 100%;
-  border-radius: 18px;
+  border-radius: 15px;
   transition: all 0.8s ease-out;
-  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
-.health-text {
+.score-display {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-label {
   font-size: 1.2rem;
   font-weight: bold;
-  color: #667eea;
-  min-width: 80px;
-  text-align: right;
-}
-
-.level-badge-small,
-.score-badge-small {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.level-badge-small {
-  background: linear-gradient(135deg, #FFD93D, #FFA07A);
-  color: #333;
-}
-
-.score-badge-small {
-  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
   color: white;
+}
+
+.score-value {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #FFD93D;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.captured-section {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.captured-header {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+.captured-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.captured-pokemon {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 5px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.captured-pokemon:hover {
+  transform: scale(1.15);
+}
+
+.captured-sprite {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Right Panel - Game */
+.game-panel {
+  flex: 1;
+  background: white;
+  border-radius: 25px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.game-title {
+  color: #667eea;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.game-content-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .title {
@@ -359,14 +491,6 @@ body {
   50% { transform: scale(1.05); }
 }
 
-.game-content {
-  background: white;
-  border-radius: 25px;
-  padding: 30px 25px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  max-width: 900px;
-  width: 100%;
-}
 
 .message {
   font-size: 2rem;
@@ -778,73 +902,74 @@ body {
     padding: 10px;
   }
 
-  .top-bar {
-    padding: 12px 15px;
+  .game-layout {
+    flex-direction: column;
+    height: auto;
+    gap: 15px;
   }
 
-  .title {
+  .pokemon-panel {
+    flex: 0 0 auto;
+    padding: 20px;
+  }
+
+  .panel-title {
     font-size: 1.3rem;
   }
 
-  .stats-badges {
-    gap: 8px;
-  }
-
-  .level-badge-small,
-  .score-badge-small {
+  .level-badge {
     padding: 6px 12px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
-  .pokemon-hero {
-    flex-direction: column;
-    padding: 20px;
-    gap: 20px;
-  }
-
-  .pokemon-sprite-hero {
+  .pokemon-sprite-main {
     width: 150px;
     height: 150px;
   }
 
-  .pokemon-name-hero {
-    font-size: 1.8rem;
-    text-align: center;
+  .pokemon-name-main {
+    font-size: 1.6rem;
   }
 
-  .health-bar-container {
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .health-label {
-    font-size: 1.1rem;
+  .health-label,
+  .health-text {
+    font-size: 1rem;
   }
 
   .health-bar-background {
     height: 25px;
   }
 
-  .health-text {
+  .score-label {
     font-size: 1rem;
-    text-align: center;
   }
 
-  .game-content {
+  .score-value {
+    font-size: 2rem;
+  }
+
+  .game-panel {
+    flex: 1;
     padding: 20px 15px;
   }
 
-  .evolution-title {
+  .game-title {
+    font-size: 2rem;
+  }
+
+  .evolution-title,
+  .devolution-title {
     font-size: 2.5rem;
   }
 
-  .evolution-sprite {
+  .evolution-sprite,
+  .devolution-sprite {
     width: 150px;
     height: 150px;
   }
 
-  .evolution-text {
+  .evolution-text,
+  .devolution-text {
     font-size: 1.3rem;
   }
 
