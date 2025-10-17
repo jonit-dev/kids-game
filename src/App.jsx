@@ -108,6 +108,17 @@ function App() {
     return ops[diff]
   }
 
+  const fetchPokemon = async (pokemonId) => {
+    try {
+      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`)
+      const data = await response.json()
+      setPokemonData(data)
+      console.log('Pokemon loaded:', data.name)
+    } catch (error) {
+      console.error('Error fetching Pokemon:', error)
+    }
+  }
+
   const generateProblem = () => {
     // Randomly pick a difficulty for this question
     const difficulties = ['easy', 'medium', 'hard']
@@ -146,19 +157,10 @@ function App() {
   }
 
   useEffect(() => {
+    console.log('Loading initial Pokemon, chain:', currentChain.name, 'stage:', pokemonStage, 'ID:', currentChain.stages[pokemonStage])
     generateProblem()
     fetchPokemon(currentChain.stages[pokemonStage])
   }, [])
-
-  const fetchPokemon = async (pokemonId) => {
-    try {
-      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`)
-      const data = await response.json()
-      setPokemonData(data)
-    } catch (error) {
-      console.error('Error fetching Pokemon:', error)
-    }
-  }
 
   const addXp = (points) => {
     const newXp = xp + points
