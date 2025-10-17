@@ -59,14 +59,14 @@ function App() {
         hard: { n1: [15, 30], n2: [5, 15] }
       },
       '×': {
-        easy: { n1: [1, 5], n2: [1, 5] },
-        medium: { n1: [2, 10], n2: [2, 10] },
-        hard: { n1: [6, 12], n2: [6, 12] }
+        easy: { n1: [2, 3], n2: [2, 3] },      // 2×2, 2×3, 3×2, 3×3
+        medium: { n1: [2, 4], n2: [2, 4] },    // up to 4×4
+        hard: { n1: [2, 5], n2: [2, 5] }       // up to 5×5
       },
       '÷': {
-        easy: { n1: [2, 5], n2: [2, 5] },
-        medium: { n1: [2, 10], n2: [2, 10] },
-        hard: { n1: [2, 12], n2: [2, 12] }
+        easy: { n1: [2, 2], n2: [2, 2] },      // simple like 4÷2, 6÷2
+        medium: { n1: [2, 3], n2: [2, 3] },    // up to 9÷3
+        hard: { n1: [2, 4], n2: [2, 4] }       // up to 16÷4
       }
     }
     return ranges[op][diff]
@@ -224,17 +224,17 @@ function App() {
           ) : operation === '×' ? (
             <div className="visual-problem multiplication">
               <div className="operation-explanation">
-                <strong>{num1}</strong> groups of <strong>{num2}</strong> {currentEmoji} each
+                <strong>{num1}</strong> rows × <strong>{num2}</strong> columns = <strong>{num1 * num2}</strong> {currentEmoji}
               </div>
               <div className="visual-group-full">
-                <div className="multiplication-grid">
-                  {[...Array(num1)].map((_, groupIdx) => (
-                    <div key={groupIdx} className="multiplication-group" style={{ animationDelay: `${groupIdx * 0.2}s` }}>
-                      {[...Array(num2)].map((_, itemIdx) => (
+                <div className="multiplication-array">
+                  {[...Array(num1)].map((_, rowIdx) => (
+                    <div key={rowIdx} className="multiplication-row" style={{ animationDelay: `${rowIdx * 0.1}s` }}>
+                      {[...Array(num2)].map((_, colIdx) => (
                         <span
-                          key={itemIdx}
-                          className="visual-object"
-                          style={{ animationDelay: `${(groupIdx * 0.2) + (itemIdx * 0.05)}s` }}
+                          key={colIdx}
+                          className="visual-object-mult"
+                          style={{ animationDelay: `${(rowIdx * 0.1) + (colIdx * 0.05)}s` }}
                         >
                           {currentEmoji}
                         </span>
@@ -254,18 +254,18 @@ function App() {
           ) : (
             <div className="visual-problem division">
               <div className="operation-explanation">
-                Share <strong>{num1}</strong> {currentEmoji} equally into <strong>{num2}</strong> groups
+                Divide <strong>{num1}</strong> {currentEmoji} into <strong>{num2}</strong> equal groups
               </div>
               <div className="visual-group-full">
-                <div className="division-grid">
+                <div className="division-container">
                   {[...Array(num2)].map((_, groupIdx) => (
-                    <div key={groupIdx} className="division-group" style={{ animationDelay: `${groupIdx * 0.15}s` }}>
-                      <div className="group-label">Group {groupIdx + 1}</div>
-                      <div className="division-items">
+                    <div key={groupIdx} className="division-circle" style={{ animationDelay: `${groupIdx * 0.15}s` }}>
+                      <div className="circle-label">{groupIdx + 1}</div>
+                      <div className="circle-items">
                         {[...Array(num1 / num2)].map((_, itemIdx) => (
                           <span
                             key={itemIdx}
-                            className="visual-object"
+                            className="visual-object-div"
                             style={{ animationDelay: `${(groupIdx * 0.15) + (itemIdx * 0.1)}s` }}
                           >
                             {currentEmoji}

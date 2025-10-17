@@ -244,24 +244,39 @@ body {
   min-height: 80px;
 }
 
-.multiplication-grid {
+.multiplication-array {
   display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 15px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(69, 183, 209, 0.15));
+  border-radius: 20px;
+  border: 3px dashed #4ECDC4;
+  align-items: center;
 }
 
-.multiplication-group {
+.multiplication-row {
   display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(78, 205, 196, 0.2);
-  border: 3px solid #4ECDC4;
-  border-radius: 12px;
+  gap: 10px;
   animation: slide-in 0.4s ease-out backwards;
+}
+
+.visual-object-mult {
+  font-size: 2.5rem;
+  animation: pop-in 0.3s ease-out backwards;
+  transition: transform 0.2s ease;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.visual-object-mult:hover {
+  transform: scale(1.15);
 }
 
 @keyframes slide-in {
@@ -275,24 +290,21 @@ body {
   }
 }
 
-.division-grid {
+.division-container {
   display: flex;
-  gap: 20px;
+  gap: 25px;
   flex-wrap: wrap;
   justify-content: center;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 15px;
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 142, 83, 0.1));
+  border-radius: 20px;
 }
 
-.division-group {
+.division-circle {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 15px;
-  background: rgba(255, 182, 193, 0.3);
-  border: 3px solid #FFB6C1;
-  border-radius: 12px;
+  align-items: center;
+  gap: 12px;
   animation: fade-in 0.4s ease-out backwards;
 }
 
@@ -307,18 +319,41 @@ body {
   }
 }
 
-.group-label {
-  font-size: 1rem;
+.circle-label {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
   font-weight: bold;
-  color: #FF6B6B;
-  text-align: center;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
-.division-items {
+.circle-items {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 3px solid #FFB6C1;
+  border-radius: 20px;
+  min-width: 80px;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.visual-object-div {
+  font-size: 2rem;
+  animation: pop-in 0.3s ease-out backwards;
+  transition: transform 0.2s ease;
+}
+
+.visual-object-div:hover {
+  transform: scale(1.2) rotate(10deg);
 }
 
 .subtraction-math {
@@ -516,13 +551,39 @@ body {
     font-size: 1.5rem;
   }
 
-  .multiplication-group,
-  .division-group {
-    padding: 8px;
+  .multiplication-array {
+    padding: 15px;
+    gap: 8px;
   }
 
-  .group-label {
-    font-size: 0.9rem;
+  .multiplication-row {
+    gap: 8px;
+  }
+
+  .visual-object-mult {
+    font-size: 2rem;
+    width: 40px;
+    height: 40px;
+  }
+
+  .division-container {
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .circle-label {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .circle-items {
+    padding: 10px;
+    min-width: 60px;
+  }
+
+  .visual-object-div {
+    font-size: 1.5rem;
   }
 
   .operation-math {
