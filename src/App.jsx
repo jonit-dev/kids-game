@@ -32,7 +32,8 @@ function App() {
     { name: 'Eevee', stages: [133, 134, 135] }    // Eevee -> Vaporeon -> Jolteon
   ]
 
-  const [currentChain] = useState(evolutionChains[Math.floor(Math.random() * evolutionChains.length)])
+  const [currentChainIndex, setCurrentChainIndex] = useState(Math.floor(Math.random() * evolutionChains.length))
+  const currentChain = evolutionChains[currentChainIndex]
 
   const getHealthColor = () => {
     const healthPercentage = (health / maxHP) * 100
@@ -175,14 +176,9 @@ function App() {
     const newHealth = Math.min(maxHP, health + 15) // Increase health by 15, max maxHP
     setHealth(newHealth)
 
-    // Evolve when health reaches maxHP and not at max stage
-    if (newHealth === maxHP && pokemonStage < currentChain.stages.length - 1) {
-      const newStage = pokemonStage + 1
-      const newLevel = level + 1
-      setPokemonStage(newStage)
-      setLevel(newLevel)
-
-      // Capture the current Pokemon before evolution
+    // Check if we should evolve or switch chains
+    if (newHealth === maxHP) {
+      // Capture the current Pokemon before evolution/switching
       const newCaptured = [...capturedPokemon]
       const captureEntry = {
         id: currentChain.stages[pokemonStage],
@@ -198,20 +194,48 @@ function App() {
         localStorage.setItem('capturedPokemon', JSON.stringify(newCaptured))
       }
 
-      setHealth(0) // Reset health to 0 after evolution
+      // Check if we're at the max stage of current chain
+      if (pokemonStage >= currentChain.stages.length - 1) {
+        // Switch to a new random chain (avoid current chain)
+        let newChainIndex
+        do {
+          newChainIndex = Math.floor(Math.random() * evolutionChains.length)
+        } while (newChainIndex === currentChainIndex && evolutionChains.length > 1)
 
-      // Exponentially increase maxHP: 50, 100, 200, 400...
-      const newMaxHP = Math.floor(50 * Math.pow(2, newStage))
-      setMaxHP(newMaxHP)
+        setCurrentChainIndex(newChainIndex)
+        setPokemonStage(0)
+        setLevel(1)
+        setHealth(0)
+        setMaxHP(50)
+        setShowEvolution(true)
 
-      setShowEvolution(true)
-
-      setTimeout(() => {
-        fetchPokemon(currentChain.stages[newStage])
         setTimeout(() => {
-          setShowEvolution(false)
-        }, 3000)
-      }, 500)
+          fetchPokemon(evolutionChains[newChainIndex].stages[0])
+          setTimeout(() => {
+            setShowEvolution(false)
+          }, 3000)
+        }, 500)
+      } else {
+        // Normal evolution within current chain
+        const newStage = pokemonStage + 1
+        const newLevel = level + 1
+        setPokemonStage(newStage)
+        setLevel(newLevel)
+        setHealth(0) // Reset health to 0 after evolution
+
+        // Exponentially increase maxHP: 50, 100, 200, 400...
+        const newMaxHP = Math.floor(50 * Math.pow(2, newStage))
+        setMaxHP(newMaxHP)
+
+        setShowEvolution(true)
+
+        setTimeout(() => {
+          fetchPokemon(currentChain.stages[newStage])
+          setTimeout(() => {
+            setShowEvolution(false)
+          }, 3000)
+        }, 500)
+      }
     }
   }
 
