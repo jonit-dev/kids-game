@@ -12,9 +12,10 @@ function App() {
   const [currentEmoji, setCurrentEmoji] = useState('🍎')
   const [currentQuestionDifficulty, setCurrentQuestionDifficulty] = useState('easy')
   const [level, setLevel] = useState(1)
-  const [xp, setXp] = useState(0)
+  const [health, setHealth] = useState(50) // Health bar instead of XP (0-100)
   const [pokemonStage, setPokemonStage] = useState(0)
   const [showEvolution, setShowEvolution] = useState(false)
+  const [showDevolution, setShowDevolution] = useState(false)
   const [pokemonData, setPokemonData] = useState(null)
 
   // Pokemon evolution chains - using PokeAPI IDs
@@ -28,8 +29,10 @@ function App() {
 
   const [currentChain] = useState(evolutionChains[Math.floor(Math.random() * evolutionChains.length)])
 
-  const getXpForNextLevel = (currentLevel) => {
-    return currentLevel * 10 // 10 XP for level 1, 20 for level 2, etc.
+  const getHealthColor = () => {
+    if (health > 66) return '#4ECDC4' // Teal - healthy
+    if (health > 33) return '#FFD93D' // Yellow - warning
+    return '#FF6B6B' // Red - danger
   }
 
   const encouragementMessages = [
@@ -162,31 +165,43 @@ function App() {
     fetchPokemon(currentChain.stages[pokemonStage])
   }, [])
 
-  const addXp = (points) => {
-    const newXp = xp + points
-    const xpNeeded = getXpForNextLevel(level)
+  const handleCorrectAnswer = () => {
+    const newHealth = Math.min(100, health + 15) // Increase health by 15, max 100
+    setHealth(newHealth)
 
-    if (newXp >= xpNeeded) {
-      // Level up!
-      const newLevel = level + 1
-      setLevel(newLevel)
-      setXp(newXp - xpNeeded)
+    // Evolve when health reaches 100 and not at max stage
+    if (newHealth === 100 && pokemonStage < currentChain.stages.length - 1) {
+      const newStage = pokemonStage + 1
+      setPokemonStage(newStage)
+      setHealth(50) // Reset health to 50 after evolution
+      setShowEvolution(true)
 
-      // Check for evolution (every 5 levels)
-      if (newLevel % 5 === 0 && pokemonStage < currentChain.stages.length - 1) {
-        const newStage = pokemonStage + 1
-        setPokemonStage(newStage)
-        setShowEvolution(true)
-
+      setTimeout(() => {
+        fetchPokemon(currentChain.stages[newStage])
         setTimeout(() => {
-          fetchPokemon(currentChain.stages[newStage])
-          setTimeout(() => {
-            setShowEvolution(false)
-          }, 3000)
-        }, 1000)
-      }
-    } else {
-      setXp(newXp)
+          setShowEvolution(false)
+        }, 3000)
+      }, 500)
+    }
+  }
+
+  const handleWrongAnswer = () => {
+    const newHealth = Math.max(0, health - 20) // Decrease health by 20, min 0
+    setHealth(newHealth)
+
+    // Devolve when health reaches 0 and not at first stage
+    if (newHealth === 0 && pokemonStage > 0) {
+      const newStage = pokemonStage - 1
+      setPokemonStage(newStage)
+      setHealth(50) // Reset health to 50 after devolution
+      setShowDevolution(true)
+
+      setTimeout(() => {
+        fetchPokemon(currentChain.stages[newStage])
+        setTimeout(() => {
+          setShowDevolution(false)
+        }, 3000)
+      }, 500)
     }
   }
 
@@ -205,10 +220,9 @@ function App() {
     if (userAnswer === correctAnswer) {
       const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)]
       const points = getScoreForDifficulty(currentQuestionDifficulty)
-      const diffLabel = currentQuestionDifficulty.charAt(0).toUpperCase() + currentQuestionDifficulty.slice(1)
-      setMessage(`${randomMessage} +${points} XP! (${diffLabel})`)
+      setMessage(`${randomMessage} +${points} pts!`)
       setScore(score + points)
-      addXp(points)
+      handleCorrectAnswer()
       setShowCelebration(true)
 
       setTimeout(() => {
@@ -216,7 +230,8 @@ function App() {
         generateProblem()
       }, 1500)
     } else {
-      setMessage('Oops! Try again!')
+      setMessage('Oops! Wrong answer!')
+      handleWrongAnswer()
       setAnswer('')
     }
   }
@@ -230,35 +245,42 @@ function App() {
   return (
     <div className="game-container">
       <div className="top-bar">
-        <div className="top-bar-left">
-          <h1 className="title">Math Adventure</h1>
-        </div>
-        <div className="top-bar-right">
-          {pokemonData && (
-            <div className="pokemon-compact">
-              <img
-                src={pokemonData.sprites.front_default}
-                alt={pokemonData.name}
-                className="pokemon-sprite-small"
-              />
-              <div className="pokemon-info">
-                <div className="pokemon-name-small">{pokemonData.name}</div>
-                <div className="xp-bar-small">
-                  <div
-                    className="xp-bar-fill-small"
-                    style={{ width: `${(xp / getXpForNextLevel(level)) * 100}%` }}
-                  ></div>
-                </div>
-                <div className="xp-text-small">{xp}/{getXpForNextLevel(level)} XP</div>
-              </div>
-            </div>
-          )}
-          <div className="stats-compact">
-            <div className="level-badge-small">Lv {level}</div>
-            <div className="score-badge-small">{score}</div>
-          </div>
+        <h1 className="title">Math Adventure</h1>
+        <div className="stats-badges">
+          <div className="level-badge-small">Lv {level}</div>
+          <div className="score-badge-small">{score}</div>
         </div>
       </div>
+
+      {pokemonData && (
+        <div className="pokemon-hero">
+          <img
+            src={pokemonData.sprites.front_default}
+            alt={pokemonData.name}
+            className="pokemon-sprite-hero"
+            style={{
+              filter: health < 33 ? 'brightness(0.7) saturate(0.8)' : 'none',
+              animation: health < 33 ? 'shake 0.5s infinite' : 'bounce-gentle 2s ease-in-out infinite'
+            }}
+          />
+          <div className="pokemon-status">
+            <div className="pokemon-name-hero">{pokemonData.name}</div>
+            <div className="health-bar-container">
+              <div className="health-label">HP</div>
+              <div className="health-bar-background">
+                <div
+                  className="health-bar-fill"
+                  style={{
+                    width: `${health}%`,
+                    backgroundColor: getHealthColor()
+                  }}
+                ></div>
+              </div>
+              <div className="health-text">{health}/100</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showEvolution && pokemonData && (
         <div className="evolution-overlay">
@@ -271,6 +293,22 @@ function App() {
             />
             <div className="evolution-text">
               {pokemonData.name} is evolving!
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDevolution && pokemonData && (
+        <div className="devolution-overlay">
+          <div className="devolution-content">
+            <h2 className="devolution-title">Oh no!</h2>
+            <img
+              src={pokemonData.sprites.front_default}
+              alt={pokemonData.name}
+              className="devolution-sprite"
+            />
+            <div className="devolution-text">
+              {pokemonData.name} devolved...
             </div>
           </div>
         </div>
