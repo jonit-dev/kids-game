@@ -1482,3 +1482,183 @@ body {
     padding: 12px 25px;
   }
 }
+
+/* Mode Toggle */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px;
+  border-radius: 20px;
+}
+
+.mode-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.mode-button.active {
+  background: #FFD93D;
+  color: #2D3561;
+  box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+}
+
+.mode-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spelling Mode */
+.spelling-problem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  min-height: 300px;
+  justify-content: center;
+}
+
+.spelling-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.hint-emoji {
+  font-size: 8rem;
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+.hint-text {
+  font-size: 1.5rem;
+  color: #FFD93D;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.spelling-instruction {
+  font-size: 1.8rem;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+}
+
+.spelling-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.speak-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.speak-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.speak-button:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.speak-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.speak-button svg {
+  font-size: 1.5rem;
+}
+
+.speak-button.spell-out {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+}
+
+.speak-button.spell-out:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(240, 147, 251, 0.6);
+}
+
+.speech-warning {
+  padding: 10px 20px;
+  background: rgba(255, 107, 107, 0.2);
+  border: 2px solid #FF6B6B;
+  border-radius: 10px;
+  color: #FF6B6B;
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* Update input for spelling mode */
+.answer-input[type="text"] {
+  text-transform: lowercase;
+  font-family: 'Comic Sans MS', 'Courier New', monospace;
+  letter-spacing: 3px;
+}
+
+@media (max-width: 768px) {
+  .hint-emoji {
+    font-size: 5rem;
+  }
+
+  .mode-toggle {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mode-button {
+    width: 100%;
+  }
+
+  .game-header {
+    flex-direction: column;
+  }
+
+  .spelling-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .speak-button {
+    width: 100%;
+  }
+}

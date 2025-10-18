@@ -1,14 +1,25 @@
 import { useState, useEffect } from 'react'
-import { MdSkipNext } from 'react-icons/md'
+import { MdSkipNext, MdVolumeUp } from 'react-icons/md'
 import './App.css'
+import { getRandomWord, getSpellingPoints } from './wordData'
+import { useSpeech } from './useSpeech'
 
 function App() {
+  // Game mode: 'math' or 'spelling'
+  const [gameMode, setGameMode] = useState('math')
+
+  // Math mode state
   const [num1, setNum1] = useState(0)
   const [num2, setNum2] = useState(0)
   const [operation, setOperation] = useState('+')
+
+  // Spelling mode state
+  const [currentWord, setCurrentWord] = useState(null)
+
+  // Shared state
   const [answer, setAnswer] = useState('')
   const [score, setScore] = useState(0)
-  const [message, setMessage] = useState('Let\'s learn math!')
+  const [message, setMessage] = useState('Let\'s learn!')
   const [showCelebration, setShowCelebration] = useState(false)
   const [currentEmoji, setCurrentEmoji] = useState('🍎')
   const [currentQuestionDifficulty, setCurrentQuestionDifficulty] = useState('easy')
@@ -26,6 +37,9 @@ function App() {
   })
   const [maxHP, setMaxHP] = useState(50) // Exponentially increasing HP requirement
   const [isProcessingAnswer, setIsProcessingAnswer] = useState(false) // Prevent multiple submissions
+
+  // Text-to-speech hook
+  const { speakWord, spellOut, isSupported: isSpeechSupported } = useSpeech()
 
   // Pokemon evolution chains - using PokeAPI IDs
   const evolutionChains = [
@@ -244,6 +258,19 @@ function App() {
     }
   }
 
+  const generateSpellingWord = () => {
+    const word = getRandomWord(level)
+    setCurrentWord(word)
+    setCurrentEmoji(word.hint)
+    setAnswer('')
+    setMessage('Spell this word!')
+
+    // Automatically speak the word
+    setTimeout(() => {
+      speakWord(word.word)
+    }, 300)
+  }
+
   const generateProblem = () => {
     // Determine difficulty based on level - progressively harder as level increases
     let randomDifficulty
@@ -299,11 +326,26 @@ function App() {
     setMessage('Try this one!')
   }
 
+  const generateQuestion = () => {
+    if (gameMode === 'spelling') {
+      generateSpellingWord()
+    } else {
+      generateProblem()
+    }
+  }
+
   useEffect(() => {
     console.log('Loading initial Pokemon, chain:', currentChain.name, 'stage:', pokemonStage, 'ID:', currentChain.stages[pokemonStage])
-    generateProblem()
+    generateQuestion()
     fetchPokemon(currentChain.stages[pokemonStage])
   }, [])
+
+  // Regenerate question when mode changes
+  useEffect(() => {
+    if (pokemonData) {
+      generateQuestion()
+    }
+  }, [gameMode])
 
   const handleCorrectAnswer = () => {
     const newHealth = Math.min(maxHP, health + 15) // Increase health by 15, max maxHP
@@ -452,31 +494,53 @@ function App() {
       return
     }
 
+    let isCorrect = false
     let correctAnswer
-    switch (operation) {
-      case '+': correctAnswer = num1 + num2; break
-      case '-': correctAnswer = num1 - num2; break
-      case '×': correctAnswer = num1 * num2; break
-      case '÷': correctAnswer = num1 / num2; break
-      default: correctAnswer = 0
+    let points
+
+    if (gameMode === 'spelling') {
+      // Spelling mode - check if word is spelled correctly
+      correctAnswer = currentWord.word.toLowerCase()
+      const userAnswer = answer.toLowerCase().trim()
+
+      console.log('Check Spelling:', {
+        userInput: answer,
+        userAnswer,
+        correctAnswer,
+        isCorrect: userAnswer === correctAnswer
+      })
+
+      isCorrect = userAnswer === correctAnswer
+      points = isCorrect ? getSpellingPoints(currentWord.word) : 0
+    } else {
+      // Math mode - check if calculation is correct
+      switch (operation) {
+        case '+': correctAnswer = num1 + num2; break
+        case '-': correctAnswer = num1 - num2; break
+        case '×': correctAnswer = num1 * num2; break
+        case '÷': correctAnswer = num1 / num2; break
+        default: correctAnswer = 0
+      }
+
+      const userAnswer = parseInt(answer)
+
+      console.log('Check Answer:', {
+        userInput: answer,
+        userAnswer,
+        correctAnswer,
+        isCorrect: userAnswer === correctAnswer,
+        isNaN: isNaN(userAnswer)
+      })
+
+      isCorrect = !isNaN(userAnswer) && userAnswer === correctAnswer
+      points = isCorrect ? getScoreForDifficulty(currentQuestionDifficulty) : 0
     }
 
-    const userAnswer = parseInt(answer)
-
-    console.log('Check Answer:', {
-      userInput: answer,
-      userAnswer,
-      correctAnswer,
-      isCorrect: userAnswer === correctAnswer,
-      isNaN: isNaN(userAnswer)
-    })
-
-    // Check if answer is valid and correct
-    if (!isNaN(userAnswer) && userAnswer === correctAnswer) {
+    // Handle correct/incorrect answers
+    if (isCorrect) {
       setIsProcessingAnswer(true)
       console.log('✓ CORRECT ANSWER - Increasing HP')
       const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)]
-      const points = getScoreForDifficulty(currentQuestionDifficulty)
       setMessage(`${randomMessage} +${points} pts!`)
       setScore(score + points)
       handleCorrectAnswer()
@@ -484,13 +548,17 @@ function App() {
 
       setTimeout(() => {
         setShowCelebration(false)
-        generateProblem()
+        generateQuestion()
         setIsProcessingAnswer(false)
       }, 1500)
     } else {
       setIsProcessingAnswer(true)
       console.log('⨯ WRONG ANSWER - Decreasing HP')
-      setMessage('Oops! Wrong answer!')
+      if (gameMode === 'spelling') {
+        setMessage(`Oops! It's spelled: ${correctAnswer}`)
+      } else {
+        setMessage('Oops! Wrong answer!')
+      }
       handleWrongAnswer()
       setAnswer('')
       // Reset processing flag immediately for wrong answers
@@ -579,7 +647,25 @@ function App() {
 
         {/* Right Panel - Game */}
         <div className="game-panel">
-          <h1 className="game-title">Math Adventure</h1>
+          <div className="game-header">
+            <h1 className="game-title">{gameMode === 'spelling' ? 'Spelling Adventure' : 'Math Adventure'}</h1>
+            <div className="mode-toggle">
+              <button
+                className={`mode-button ${gameMode === 'math' ? 'active' : ''}`}
+                onClick={() => setGameMode('math')}
+                disabled={isProcessingAnswer}
+              >
+                123 Math
+              </button>
+              <button
+                className={`mode-button ${gameMode === 'spelling' ? 'active' : ''}`}
+                onClick={() => setGameMode('spelling')}
+                disabled={isProcessingAnswer}
+              >
+                ABC Spelling
+              </button>
+            </div>
+          </div>
 
           <div className="game-content-inner">
             <div className={`message ${showCelebration ? 'celebration' : ''}`}>
@@ -587,6 +673,41 @@ function App() {
             </div>
 
         <div className="problem-container">
+          {gameMode === 'spelling' && currentWord ? (
+            <div className="spelling-problem">
+              <div className="spelling-hint">
+                <div className="hint-emoji">{currentWord.hint}</div>
+                <div className="hint-text">{currentWord.category}</div>
+              </div>
+              <div className="spelling-instruction">
+                Listen and spell the word
+              </div>
+              <div className="spelling-buttons">
+                <button
+                  className="speak-button"
+                  onClick={() => speakWord(currentWord.word)}
+                  disabled={isProcessingAnswer}
+                  title="Hear the word"
+                >
+                  <MdVolumeUp /> Play Word
+                </button>
+                <button
+                  className="speak-button spell-out"
+                  onClick={() => spellOut(currentWord.word)}
+                  disabled={isProcessingAnswer}
+                  title="Spell it out letter by letter"
+                >
+                  <MdVolumeUp /> Spell It Out
+                </button>
+              </div>
+              {!isSpeechSupported && (
+                <div className="speech-warning">
+                  🔇 Audio not supported in this browser
+                </div>
+              )}
+            </div>
+          ) : gameMode === 'math' ? (
+            <>
           {operation === '+' ? (
             <div className="visual-problem">
               <div className="visual-group">
@@ -694,11 +815,13 @@ function App() {
               </div>
             </div>
           )}
+            </>
+          ) : null}
         </div>
 
         <div className="answer-section">
           <input
-            type="number"
+            type={gameMode === 'spelling' ? 'text' : 'number'}
             className="answer-input"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
@@ -715,7 +838,7 @@ function App() {
           </button>
         </div>
 
-        <button className="skip-button" onClick={generateProblem} title="Skip to next question">
+        <button className="skip-button" onClick={generateQuestion} title="Skip to next question">
           <MdSkipNext />
         </button>
 
