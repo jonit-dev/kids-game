@@ -29,11 +29,74 @@ function App() {
 
   // Pokemon evolution chains - using PokeAPI IDs
   const evolutionChains = [
+    // Gen 1 Starters
     { name: 'Squirtle', stages: [7, 8, 9] },      // Squirtle -> Wartortle -> Blastoise
     { name: 'Charmander', stages: [4, 5, 6] },    // Charmander -> Charmeleon -> Charizard
     { name: 'Bulbasaur', stages: [1, 2, 3] },     // Bulbasaur -> Ivysaur -> Venusaur
+
+    // Pikachu Line
     { name: 'Pikachu', stages: [172, 25, 26] },   // Pichu -> Pikachu -> Raichu
-    { name: 'Eevee', stages: [133, 134, 135] }    // Eevee -> Vaporeon -> Jolteon
+
+    // Eevee Evolutions (multiple chains for variety)
+    { name: 'Eevee-Vaporeon', stages: [133, 134, 196] },   // Eevee -> Vaporeon -> Espeon
+    { name: 'Eevee-Jolteon', stages: [133, 135, 197] },    // Eevee -> Jolteon -> Umbreon
+    { name: 'Eevee-Flareon', stages: [133, 136, 470] },    // Eevee -> Flareon -> Leafeon
+
+    // Gen 1 Popular Pokemon
+    { name: 'Geodude', stages: [74, 75, 76] },    // Geodude -> Graveler -> Golem
+    { name: 'Abra', stages: [63, 64, 65] },       // Abra -> Kadabra -> Alakazam
+    { name: 'Machop', stages: [66, 67, 68] },     // Machop -> Machoke -> Machamp
+    { name: 'Gastly', stages: [92, 93, 94] },     // Gastly -> Haunter -> Gengar
+    { name: 'Dratini', stages: [147, 148, 149] }, // Dratini -> Dragonair -> Dragonite
+    { name: 'Oddish', stages: [43, 44, 45] },     // Oddish -> Gloom -> Vileplume
+    { name: 'Poliwag', stages: [60, 61, 62] },    // Poliwag -> Poliwhirl -> Poliwrath
+    { name: 'Bellsprout', stages: [69, 70, 71] }, // Bellsprout -> Weepinbell -> Victreebel
+
+    // Gen 2 Starters
+    { name: 'Chikorita', stages: [152, 153, 154] }, // Chikorita -> Bayleef -> Meganium
+    { name: 'Cyndaquil', stages: [155, 156, 157] }, // Cyndaquil -> Quilava -> Typhlosion
+    { name: 'Totodile', stages: [158, 159, 160] },  // Totodile -> Croconaw -> Feraligatr
+
+    // Gen 2 Popular
+    { name: 'Mareep', stages: [179, 180, 181] },  // Mareep -> Flaaffy -> Ampharos
+    { name: 'Larvitar', stages: [246, 247, 248] }, // Larvitar -> Pupitar -> Tyranitar
+
+    // Gen 3 Starters
+    { name: 'Treecko', stages: [252, 253, 254] },  // Treecko -> Grovyle -> Sceptile
+    { name: 'Torchic', stages: [255, 256, 257] },  // Torchic -> Combusken -> Blaziken
+    { name: 'Mudkip', stages: [258, 259, 260] },   // Mudkip -> Marshtomp -> Swampert
+
+    // Gen 3 Popular
+    { name: 'Ralts', stages: [280, 281, 282] },    // Ralts -> Kirlia -> Gardevoir
+    { name: 'Aron', stages: [304, 305, 306] },     // Aron -> Lairon -> Aggron
+    { name: 'Beldum', stages: [374, 375, 376] },   // Beldum -> Metang -> Metagross
+
+    // Gen 4 Starters
+    { name: 'Turtwig', stages: [387, 388, 389] },  // Turtwig -> Grotle -> Torterra
+    { name: 'Chimchar', stages: [390, 391, 392] }, // Chimchar -> Monferno -> Infernape
+    { name: 'Piplup', stages: [393, 394, 395] },   // Piplup -> Prinplup -> Empoleon
+
+    // Gen 4 Popular
+    { name: 'Gible', stages: [443, 444, 445] },    // Gible -> Gabite -> Garchomp
+    { name: 'Riolu', stages: [447, 448, 745] },    // Riolu -> Lucario -> Lycanroc (mixing for variety)
+
+    // Gen 5 Starters
+    { name: 'Snivy', stages: [495, 496, 497] },    // Snivy -> Servine -> Serperior
+    { name: 'Tepig', stages: [498, 499, 500] },    // Tepig -> Pignite -> Emboar
+    { name: 'Oshawott', stages: [501, 502, 503] }, // Oshawott -> Dewott -> Samurott
+
+    // Gen 5 Popular
+    { name: 'Deino', stages: [633, 634, 635] },    // Deino -> Zweilous -> Hydreigon
+
+    // Gen 6 Starters
+    { name: 'Chespin', stages: [650, 651, 652] },  // Chespin -> Quilladin -> Chesnaught
+    { name: 'Fennekin', stages: [653, 654, 655] }, // Fennekin -> Braixen -> Delphox
+    { name: 'Froakie', stages: [656, 657, 658] },  // Froakie -> Frogadier -> Greninja
+
+    // Gen 7 Starters
+    { name: 'Rowlet', stages: [722, 723, 724] },   // Rowlet -> Dartrix -> Decidueye
+    { name: 'Litten', stages: [725, 726, 727] },   // Litten -> Torracat -> Incineroar
+    { name: 'Popplio', stages: [728, 729, 730] },  // Popplio -> Brionne -> Primarina
   ]
 
   // Helper function to check if a chain has any uncaptured Pokemon

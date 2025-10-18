@@ -271,7 +271,7 @@ describe('useGameState Hook', () => {
 
   describe('Chain Switching - Jolteon Bug Investigation', () => {
     it('should switch chains when at max stage with full HP', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       // Set to Jolteon (stage 2) with nearly full HP
@@ -282,7 +282,7 @@ describe('useGameState Hook', () => {
         result.current.setLevel(3)
       })
 
-      expect(result.current.currentPokemonId).toBe(135) // Jolteon
+      expect(result.current.currentPokemonId).toBe(197) // Umbreon (final evolution)
 
       let actionResult
       act(() => {
@@ -298,8 +298,8 @@ describe('useGameState Hook', () => {
       expect(result.current.currentChainIndex).not.toBe(eeveeChainIndex)
     })
 
-    it('should capture Jolteon before switching chains', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+    it('should capture Umbreon before switching chains', () => {
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
@@ -313,11 +313,11 @@ describe('useGameState Hook', () => {
       })
 
       expect(result.current.capturedPokemon).toHaveLength(1)
-      expect(result.current.capturedPokemon[0].id).toBe(135) // Jolteon
+      expect(result.current.capturedPokemon[0].id).toBe(197) // Umbreon
     })
 
     it('should switch to available chain with uncaptured pokemon', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
 
       // Capture all Squirtle chain
       const captured = [
@@ -340,19 +340,19 @@ describe('useGameState Hook', () => {
 
       const newChain = evolutionChains[result.current.currentChainIndex]
       expect(newChain.name).not.toBe('Squirtle') // Should not be fully captured chain
-      expect(newChain.name).not.toBe('Eevee') // Should not be current chain
+      expect(newChain.name).not.toBe('Eevee-Jolteon') // Should not be current chain
     })
 
     it('should handle all pokemon captured scenario', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
 
-      // Capture all pokemon except Jolteon
-      const allButJolteon = evolutionChains
+      // Capture all pokemon except Umbreon
+      const allButUmbreon = evolutionChains
         .flatMap(chain => chain.stages)
-        .filter(id => id !== 135)
+        .filter(id => id !== 197)
         .map(id => ({ id, name: `pokemon-${id}` }))
 
-      const { result } = renderHook(() => useGameState(eeveeChainIndex, allButJolteon))
+      const { result } = renderHook(() => useGameState(eeveeChainIndex, allButUmbreon))
 
       act(() => {
         result.current.setPokemonStage(2)
@@ -367,11 +367,11 @@ describe('useGameState Hook', () => {
 
       expect(actionResult.action).toBe('swap')
       expect(actionResult.allCaptured).toBe(true)
-      expect(result.current.capturedPokemon).toHaveLength(allButJolteon.length + 1)
+      expect(result.current.capturedPokemon).toHaveLength(allButUmbreon.length + 1)
     })
 
     it('should increment level when switching chains', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
@@ -424,7 +424,7 @@ describe('useGameState Hook', () => {
     })
 
     it('should set showSwap on chain switch', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
