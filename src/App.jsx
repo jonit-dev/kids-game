@@ -19,11 +19,13 @@ function App() {
   const [showDevolution, setShowDevolution] = useState(false)
   const [showSwap, setShowSwap] = useState(false)
   const [pokemonData, setPokemonData] = useState(null)
+  const [selectedPokemon, setSelectedPokemon] = useState(null)
   const [capturedPokemon, setCapturedPokemon] = useState(() => {
     const saved = localStorage.getItem('capturedPokemon')
     return saved ? JSON.parse(saved) : []
   })
   const [maxHP, setMaxHP] = useState(50) // Exponentially increasing HP requirement
+  const [isProcessingAnswer, setIsProcessingAnswer] = useState(false) // Prevent multiple submissions
 
   // Pokemon evolution chains - using PokeAPI IDs
   const evolutionChains = [
@@ -34,7 +36,29 @@ function App() {
     { name: 'Eevee', stages: [133, 134, 135] }    // Eevee -> Vaporeon -> Jolteon
   ]
 
-  const [currentChainIndex, setCurrentChainIndex] = useState(Math.floor(Math.random() * evolutionChains.length))
+  // Helper function to check if a chain has any uncaptured Pokemon
+  const getAvailableChains = (captured) => {
+    return evolutionChains.filter((chain) => {
+      // A chain is available if at least one Pokemon in it is NOT captured
+      return chain.stages.some(pokemonId =>
+        !captured.some(c => c.id === pokemonId)
+      )
+    })
+  }
+
+  // Initialize with a chain that has uncaptured Pokemon
+  const [currentChainIndex, setCurrentChainIndex] = useState(() => {
+    const availableChains = getAvailableChains(
+      JSON.parse(localStorage.getItem('capturedPokemon') || '[]')
+    )
+    if (availableChains.length === 0) {
+      // All Pokemon captured - start fresh or pick any chain
+      return Math.floor(Math.random() * evolutionChains.length)
+    }
+    // Find the index of the first available chain in the original array
+    const selectedChain = availableChains[Math.floor(Math.random() * availableChains.length)]
+    return evolutionChains.findIndex(c => c.name === selectedChain.name)
+  })
   const currentChain = evolutionChains[currentChainIndex]
 
   const getHealthColor = () => {
@@ -220,47 +244,92 @@ function App() {
 
   const handleCorrectAnswer = () => {
     const newHealth = Math.min(maxHP, health + 15) // Increase health by 15, max maxHP
+    console.log(`HP Change: ${health} → ${newHealth} (+15)`)
     setHealth(newHealth)
 
     // Check if we should evolve or switch chains
     if (newHealth === maxHP) {
       // Capture the current Pokemon before evolution/switching
-      const newCaptured = [...capturedPokemon]
-      const captureEntry = {
-        id: currentChain.stages[pokemonStage],
-        name: pokemonData.name,
-        sprite: pokemonData.sprites.front_default,
-        capturedAt: new Date().toISOString()
-      }
+      const pokemonId = currentChain.stages[pokemonStage]
+      const alreadyCaptured = capturedPokemon.some(p => p.id === pokemonId)
 
-      // Check if not already captured
-      if (!newCaptured.find(p => p.id === captureEntry.id)) {
-        newCaptured.push(captureEntry)
+      console.log('Attempting to capture:', pokemonData.name, 'ID:', pokemonId, 'Already captured:', alreadyCaptured)
+
+      let newCaptured = capturedPokemon
+      if (!alreadyCaptured) {
+        const captureEntry = {
+          id: pokemonId,
+          name: pokemonData.name,
+          sprite: pokemonData.sprites.front_default,
+          capturedAt: new Date().toISOString()
+        }
+
+        newCaptured = [...capturedPokemon, captureEntry]
         setCapturedPokemon(newCaptured)
         localStorage.setItem('capturedPokemon', JSON.stringify(newCaptured))
+        console.log('✓ Captured new Pokemon:', pokemonData.name, 'Total captured:', newCaptured.length)
+      } else {
+        console.log('⨯ Skipped duplicate:', pokemonData.name)
       }
 
       // Check if we're at the max stage of current chain
       if (pokemonStage >= currentChain.stages.length - 1) {
-        // Switch to a new random chain (avoid current chain)
-        let newChainIndex
-        do {
-          newChainIndex = Math.floor(Math.random() * evolutionChains.length)
-        } while (newChainIndex === currentChainIndex && evolutionChains.length > 1)
+        // Get available chains (ones with at least one uncaptured Pokemon)
+        const availableChains = getAvailableChains(newCaptured)
 
-        setCurrentChainIndex(newChainIndex)
-        setPokemonStage(0)
-        setLevel(level + 1) // Keep leveling up instead of resetting to 1
-        setHealth(0)
-        setMaxHP(50)
-        setShowSwap(true) // Use swap animation instead of evolution
+        console.log('Chain switching - Available chains:', availableChains.map(c => c.name))
+        console.log('Total captured Pokemon:', newCaptured.length)
 
-        setTimeout(() => {
-          fetchPokemon(evolutionChains[newChainIndex].stages[0])
+        if (availableChains.length === 0) {
+          // All Pokemon captured! Congratulations message
+          console.log('🎉 ALL POKEMON CAPTURED! Game complete!')
+          // Could add end game logic here or reset to allow replay
+          // For now, just cycle through all chains again
+          const newChainIndex = (currentChainIndex + 1) % evolutionChains.length
+          setCurrentChainIndex(newChainIndex)
+          setPokemonStage(0)
+          setLevel(level + 1)
+          setHealth(0)
+          setMaxHP(50)
+          setShowSwap(true)
+
           setTimeout(() => {
-            setShowSwap(false)
-          }, 3000)
-        }, 500)
+            fetchPokemon(evolutionChains[newChainIndex].stages[0])
+            setTimeout(() => {
+              setShowSwap(false)
+            }, 3000)
+          }, 500)
+        } else {
+          // Select from available chains only
+          // Filter out current chain if possible
+          let eligibleChains = availableChains.filter((chain) => {
+            return evolutionChains.findIndex(c => c.name === chain.name) !== currentChainIndex
+          })
+
+          // If all available chains are the current chain, use any available
+          if (eligibleChains.length === 0) {
+            eligibleChains = availableChains
+          }
+
+          const selectedChain = eligibleChains[Math.floor(Math.random() * eligibleChains.length)]
+          const newChainIndex = evolutionChains.findIndex(c => c.name === selectedChain.name)
+
+          console.log('✓ Switching to chain:', selectedChain.name, 'Index:', newChainIndex)
+
+          setCurrentChainIndex(newChainIndex)
+          setPokemonStage(0)
+          setLevel(level + 1) // Keep leveling up instead of resetting to 1
+          setHealth(0)
+          setMaxHP(50)
+          setShowSwap(true) // Use swap animation instead of evolution
+
+          setTimeout(() => {
+            fetchPokemon(evolutionChains[newChainIndex].stages[0])
+            setTimeout(() => {
+              setShowSwap(false)
+            }, 3000)
+          }, 500)
+        }
       } else {
         // Normal evolution within current chain
         const newStage = pokemonStage + 1
@@ -287,6 +356,7 @@ function App() {
 
   const handleWrongAnswer = () => {
     const newHealth = Math.max(0, health - 20) // Decrease health by 20, min 0
+    console.log(`HP Change: ${health} → ${newHealth} (-20)`)
     setHealth(newHealth)
 
     // Devolve when health reaches 0 and not at first stage
@@ -313,6 +383,12 @@ function App() {
   }
 
   const checkAnswer = () => {
+    // Prevent multiple submissions
+    if (isProcessingAnswer) {
+      console.log('⚠ Answer already being processed, ignoring duplicate click')
+      return
+    }
+
     let correctAnswer
     switch (operation) {
       case '+': correctAnswer = num1 + num2; break
@@ -324,7 +400,18 @@ function App() {
 
     const userAnswer = parseInt(answer)
 
-    if (userAnswer === correctAnswer) {
+    console.log('Check Answer:', {
+      userInput: answer,
+      userAnswer,
+      correctAnswer,
+      isCorrect: userAnswer === correctAnswer,
+      isNaN: isNaN(userAnswer)
+    })
+
+    // Check if answer is valid and correct
+    if (!isNaN(userAnswer) && userAnswer === correctAnswer) {
+      setIsProcessingAnswer(true)
+      console.log('✓ CORRECT ANSWER - Increasing HP')
       const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)]
       const points = getScoreForDifficulty(currentQuestionDifficulty)
       setMessage(`${randomMessage} +${points} pts!`)
@@ -335,11 +422,18 @@ function App() {
       setTimeout(() => {
         setShowCelebration(false)
         generateProblem()
+        setIsProcessingAnswer(false)
       }, 1500)
     } else {
+      setIsProcessingAnswer(true)
+      console.log('⨯ WRONG ANSWER - Decreasing HP')
       setMessage('Oops! Wrong answer!')
       handleWrongAnswer()
       setAnswer('')
+      // Reset processing flag immediately for wrong answers
+      setTimeout(() => {
+        setIsProcessingAnswer(false)
+      }, 300)
     }
   }
 
@@ -399,16 +493,20 @@ function App() {
 
           {capturedPokemon.length > 0 && (
             <div className="captured-section">
-              <div className="captured-header">Captured Pokemon</div>
+              <div className="captured-header">Captured Pokemon ({capturedPokemon.length})</div>
               <div className="captured-list">
                 {capturedPokemon.map((pokemon, index) => (
-                  <div key={index} className="captured-pokemon">
+                  <div
+                    key={`${pokemon.id}-${index}`}
+                    className="captured-pokemon"
+                    onClick={() => setSelectedPokemon(pokemon)}
+                  >
                     <img
                       src={pokemon.sprite}
                       alt={pokemon.name}
                       className="captured-sprite"
-                      title={pokemon.name}
                     />
+                    <div className="captured-pokemon-name">{pokemon.name}</div>
                   </div>
                 ))}
               </div>
@@ -548,7 +646,7 @@ function App() {
           <button
             className="submit-button"
             onClick={checkAnswer}
-            disabled={answer === ''}
+            disabled={answer === '' || isProcessingAnswer}
           >
             Check Answer
           </button>
@@ -616,6 +714,26 @@ function App() {
             />
             <div className="swap-text">
               A new Pokemon joins you!
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPokemon && (
+        <div className="pokemon-detail-overlay" onClick={() => setSelectedPokemon(null)}>
+          <div className="pokemon-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal" onClick={() => setSelectedPokemon(null)}>×</button>
+            <div className="pokemon-detail-content">
+              <h2 className="pokemon-detail-name">{selectedPokemon.name}</h2>
+              <div className="pokemon-detail-id">#{selectedPokemon.id}</div>
+              <img
+                src={selectedPokemon.sprite}
+                alt={selectedPokemon.name}
+                className="pokemon-detail-sprite"
+              />
+              <div className="pokemon-detail-captured">
+                Captured on: {new Date(selectedPokemon.capturedAt).toLocaleDateString()}
+              </div>
             </div>
           </div>
         </div>
