@@ -9,14 +9,14 @@ import {
 
 describe('Chain Switching Logic - Bug Investigation', () => {
   it('should identify Jolteon (135) as final stage in Eevee chain', () => {
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
-    expect(eeveeChain.stages).toEqual([133, 135, 197])
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
+    expect(eeveeChain.stages).toEqual([133, 135, 466])
     expect(isAtMaxStage(2, eeveeChain)).toBe(true)
   })
 
   it('should require chain switch when at max stage with full HP', () => {
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
-    const pokemonStage = 2 // Umbreon (final evolution)
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
+    const pokemonStage = 2 // Electivire (final evolution)
     const maxHP = 200
     const health = 200
 
@@ -27,22 +27,22 @@ describe('Chain Switching Logic - Bug Investigation', () => {
     expect(shouldEvolveNow).toBe(true)
   })
 
-  it('should have available chains when only Eevee-Jolteon chain is complete', () => {
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
+  it('should have available chains when only Eevee-Electric chain is complete', () => {
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
     const capturedEeveeChain = eeveeChain.stages.map(id => ({
       id,
       name: `pokemon-${id}`
     }))
 
     const available = getAvailableChains(capturedEeveeChain)
-    expect(available.length).toBe(40) // All chains except Eevee-Jolteon
-    expect(available.some(c => c.name === 'Eevee-Jolteon')).toBe(false)
+    expect(available.length).toBe(260) // All chains except Eevee-Electric
+    expect(available.some(c => c.name === 'Eevee-Electric')).toBe(false)
   })
 
   it('should correctly handle Jolteon chain reaching 200/200 HP', () => {
     // Simulate the exact scenario from the bug report
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
-    const pokemonStage = 2 // Umbreon (final evolution)
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
+    const pokemonStage = 2 // Electivire (final evolution)
     const currentHealth = 185
     const maxHP = 200
 
@@ -67,8 +67,8 @@ describe('Chain Switching Logic - Bug Investigation', () => {
   })
 
   it('should provide valid alternative chain when all chains available', () => {
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
-    const currentChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
+    const currentChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
 
     // No pokemon captured yet
     const available = getAvailableChains([])
@@ -78,8 +78,8 @@ describe('Chain Switching Logic - Bug Investigation', () => {
       return evolutionChains.findIndex(c => c.name === chain.name) !== currentChainIndex
     })
 
-    expect(eligibleChains.length).toBe(40)
-    expect(eligibleChains.some(c => c.name === 'Eevee-Jolteon')).toBe(false)
+    expect(eligibleChains.length).toBe(260)
+    expect(eligibleChains.some(c => c.name === 'Eevee-Electric')).toBe(false)
   })
 
   it('should handle case where only one chain remains uncaptured', () => {
@@ -95,21 +95,21 @@ describe('Chain Switching Logic - Bug Investigation', () => {
   })
 
   it('should handle case where current chain is the only available chain', () => {
-    // Capture all chains except Eevee-Jolteon chain (partial)
-    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Jolteon')
-    const currentChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+    // Capture all chains except Eevee-Electric chain (partial)
+    const eeveeChain = evolutionChains.find(c => c.name === 'Eevee-Electric')
+    const currentChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
 
-    // Capture all pokemon except Umbreon (197)
+    // Capture all pokemon except Electivire (466)
     const captured = evolutionChains
       .flatMap(chain => chain.stages)
-      .filter(id => id !== 197)
+      .filter(id => id !== 466)
       .map(id => ({ id, name: `pokemon-${id}` }))
 
     const available = getAvailableChains(captured)
 
-    // Only Eevee-Jolteon chain should be available (because Umbreon is uncaptured)
+    // Only Eevee-Electric chain should be available (because Electivire is uncaptured)
     expect(available.length).toBeGreaterThanOrEqual(1)
-    expect(available.some(c => c.name === 'Eevee-Jolteon')).toBe(true)
+    expect(available.some(c => c.name === 'Eevee-Electric')).toBe(true)
 
     // Try to filter out current chain
     const eligibleChains = available.filter((chain) => {

@@ -15,8 +15,8 @@ import {
 } from './gameLogic'
 
 describe('Evolution Chains', () => {
-  it('should have 41 evolution chains', () => {
-    expect(evolutionChains).toHaveLength(41)
+  it('should have 261 evolution chains', () => {
+    expect(evolutionChains).toHaveLength(261)
   })
 
   it('should have valid chain structures', () => {
@@ -38,7 +38,7 @@ describe('Evolution Chains', () => {
 describe('getAvailableChains', () => {
   it('should return all chains when no pokemon are captured', () => {
     const available = getAvailableChains([])
-    expect(available).toHaveLength(41)
+    expect(available).toHaveLength(261)
   })
 
   it('should exclude chains where all pokemon are captured', () => {
@@ -48,7 +48,7 @@ describe('getAvailableChains', () => {
       { id: 9, name: 'blastoise' }
     ]
     const available = getAvailableChains(captured)
-    expect(available).toHaveLength(40)
+    expect(available).toHaveLength(260)
     expect(available.some(chain => chain.name === 'Squirtle')).toBe(false)
   })
 
@@ -59,7 +59,7 @@ describe('getAvailableChains', () => {
       // Blastoise (9) not captured
     ]
     const available = getAvailableChains(captured)
-    expect(available).toHaveLength(41)
+    expect(available).toHaveLength(261)
     expect(available.some(chain => chain.name === 'Squirtle')).toBe(true)
   })
 

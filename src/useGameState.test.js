@@ -23,7 +23,7 @@ describe('useGameState Hook', () => {
       const { result } = renderHook(() => useGameState(2))
 
       expect(result.current.currentChainIndex).toBe(2)
-      expect(result.current.currentChain.name).toBe('Bulbasaur')
+      expect(result.current.currentChain.name).toBe('Squirtle')
     })
 
     it('should initialize with captured pokemon', () => {
@@ -36,7 +36,7 @@ describe('useGameState Hook', () => {
     it('should set correct current pokemon ID', () => {
       const { result } = renderHook(() => useGameState(0))
 
-      expect(result.current.currentPokemonId).toBe(7) // Squirtle
+      expect(result.current.currentPokemonId).toBe(1) // Bulbasaur (chain 0, stage 0)
     })
   })
 
@@ -172,11 +172,11 @@ describe('useGameState Hook', () => {
       })
 
       expect(result.current.capturedPokemon).toHaveLength(1)
-      expect(result.current.capturedPokemon[0].id).toBe(7) // Squirtle
+      expect(result.current.capturedPokemon[0].id).toBe(1) // Bulbasaur (chain 0, stage 0)
     })
 
     it('should not capture duplicate pokemon', () => {
-      const captured = [{ id: 7, name: 'squirtle', capturedAt: '2025-01-01' }]
+      const captured = [{ id: 1, name: 'bulbasaur', capturedAt: '2025-01-01' }]
       const { result } = renderHook(() => useGameState(0, captured))
 
       act(() => {
@@ -271,10 +271,10 @@ describe('useGameState Hook', () => {
 
   describe('Chain Switching - Jolteon Bug Investigation', () => {
     it('should switch chains when at max stage with full HP', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
-      // Set to Jolteon (stage 2) with nearly full HP
+      // Set to Electivire (stage 2) with nearly full HP
       act(() => {
         result.current.setPokemonStage(2)
         result.current.setMaxHP(200)
@@ -282,7 +282,7 @@ describe('useGameState Hook', () => {
         result.current.setLevel(3)
       })
 
-      expect(result.current.currentPokemonId).toBe(197) // Umbreon (final evolution)
+      expect(result.current.currentPokemonId).toBe(466) // Electivire (final evolution)
 
       let actionResult
       act(() => {
@@ -298,8 +298,8 @@ describe('useGameState Hook', () => {
       expect(result.current.currentChainIndex).not.toBe(eeveeChainIndex)
     })
 
-    it('should capture Umbreon before switching chains', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+    it('should capture Electivire before switching chains', () => {
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
@@ -313,11 +313,11 @@ describe('useGameState Hook', () => {
       })
 
       expect(result.current.capturedPokemon).toHaveLength(1)
-      expect(result.current.capturedPokemon[0].id).toBe(197) // Umbreon
+      expect(result.current.capturedPokemon[0].id).toBe(466) // Electivire
     })
 
     it('should switch to available chain with uncaptured pokemon', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
 
       // Capture all Squirtle chain
       const captured = [
@@ -340,19 +340,19 @@ describe('useGameState Hook', () => {
 
       const newChain = evolutionChains[result.current.currentChainIndex]
       expect(newChain.name).not.toBe('Squirtle') // Should not be fully captured chain
-      expect(newChain.name).not.toBe('Eevee-Jolteon') // Should not be current chain
+      expect(newChain.name).not.toBe('Eevee-Electric') // Should not be current chain
     })
 
     it('should handle all pokemon captured scenario', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
 
-      // Capture all pokemon except Umbreon
-      const allButUmbreon = evolutionChains
+      // Capture all pokemon except Electivire
+      const allButElectivire = evolutionChains
         .flatMap(chain => chain.stages)
-        .filter(id => id !== 197)
+        .filter(id => id !== 466)
         .map(id => ({ id, name: `pokemon-${id}` }))
 
-      const { result } = renderHook(() => useGameState(eeveeChainIndex, allButUmbreon))
+      const { result } = renderHook(() => useGameState(eeveeChainIndex, allButElectivire))
 
       act(() => {
         result.current.setPokemonStage(2)
@@ -367,11 +367,11 @@ describe('useGameState Hook', () => {
 
       expect(actionResult.action).toBe('swap')
       expect(actionResult.allCaptured).toBe(true)
-      expect(result.current.capturedPokemon).toHaveLength(allButUmbreon.length + 1)
+      expect(result.current.capturedPokemon).toHaveLength(allButElectivire.length + 1)
     })
 
     it('should increment level when switching chains', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
@@ -424,7 +424,7 @@ describe('useGameState Hook', () => {
     })
 
     it('should set showSwap on chain switch', () => {
-      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Jolteon')
+      const eeveeChainIndex = evolutionChains.findIndex(c => c.name === 'Eevee-Electric')
       const { result } = renderHook(() => useGameState(eeveeChainIndex))
 
       act(() => {
@@ -466,10 +466,10 @@ describe('useGameState Hook', () => {
   })
 
   describe('Full Game Flow Integration', () => {
-    it('should complete full evolution cycle from Squirtle to Blastoise', () => {
-      const { result } = renderHook(() => useGameState(0)) // Squirtle chain
+    it('should complete full evolution cycle from Bulbasaur to Venusaur', () => {
+      const { result } = renderHook(() => useGameState(0)) // Bulbasaur chain
 
-      // Squirtle -> Wartortle
+      // Bulbasaur -> Ivysaur
       act(() => {
         result.current.setHealth(35)
       })
@@ -478,9 +478,9 @@ describe('useGameState Hook', () => {
       })
 
       expect(result.current.pokemonStage).toBe(1)
-      expect(result.current.currentPokemonId).toBe(8) // Wartortle
+      expect(result.current.currentPokemonId).toBe(2) // Ivysaur
 
-      // Wartortle -> Blastoise
+      // Ivysaur -> Venusaur
       act(() => {
         result.current.setHealth(85)
       })
@@ -489,9 +489,9 @@ describe('useGameState Hook', () => {
       })
 
       expect(result.current.pokemonStage).toBe(2)
-      expect(result.current.currentPokemonId).toBe(9) // Blastoise
+      expect(result.current.currentPokemonId).toBe(3) // Venusaur
 
-      // Blastoise -> Chain Switch
+      // Venusaur -> Chain Switch
       act(() => {
         result.current.setHealth(185)
       })
@@ -539,14 +539,14 @@ describe('useGameState Hook', () => {
 
       const captureIds = []
 
-      // Evolve through Squirtle chain
+      // Evolve through Bulbasaur chain
       act(() => {
         result.current.setHealth(35)
       })
       act(() => {
         result.current.handleCorrectAnswer()
       })
-      captureIds.push(7) // Squirtle
+      captureIds.push(1) // Bulbasaur
 
       act(() => {
         result.current.setHealth(85)
@@ -554,7 +554,7 @@ describe('useGameState Hook', () => {
       act(() => {
         result.current.handleCorrectAnswer()
       })
-      captureIds.push(8) // Wartortle
+      captureIds.push(2) // Ivysaur
 
       act(() => {
         result.current.setHealth(185)
@@ -562,7 +562,7 @@ describe('useGameState Hook', () => {
       act(() => {
         result.current.handleCorrectAnswer()
       })
-      captureIds.push(9) // Blastoise
+      captureIds.push(3) // Venusaur
 
       expect(result.current.capturedPokemon).toHaveLength(3)
       expect(result.current.capturedPokemon.map(p => p.id)).toEqual(captureIds)
