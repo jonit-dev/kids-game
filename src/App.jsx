@@ -5,7 +5,10 @@ import { getRandomWord, getSpellingPoints } from './wordData'
 import { useSpeech } from './useSpeech'
 
 function App() {
-  // Game mode: 'math' or 'spelling'
+  // Mode selection state
+  const [showModeSelection, setShowModeSelection] = useState(true)
+
+  // Game mode: 'math', 'spelling', or 'memory'
   const [gameMode, setGameMode] = useState('math')
 
   // Math mode state
@@ -15,6 +18,20 @@ function App() {
 
   // Spelling mode state
   const [currentWord, setCurrentWord] = useState(null)
+
+  // Memory game state
+  const [memoryCards, setMemoryCards] = useState([])
+  const [flippedCards, setFlippedCards] = useState([])
+  const [matchedCards, setMatchedCards] = useState([])
+  const [wrongMatchCards, setWrongMatchCards] = useState([])
+  const [memoryMoves, setMemoryMoves] = useState(0)
+  const [memoryDifficulty, setMemoryDifficulty] = useState('easy') // easy, medium, hard
+  const [memoryTimer, setMemoryTimer] = useState(0)
+  const [memoryTimerActive, setMemoryTimerActive] = useState(false)
+  const [bestTimes, setBestTimes] = useState(() => {
+    const saved = localStorage.getItem('memoryBestTimes')
+    return saved ? JSON.parse(saved) : { easy: null, medium: null, hard: null }
+  })
 
   // Shared state
   const [answer, setAnswer] = useState('')
@@ -708,10 +725,68 @@ function App() {
   const generateQuestion = () => {
     if (gameMode === 'spelling') {
       generateSpellingWord()
+    } else if (gameMode === 'memory') {
+      generateMemoryGame()
     } else {
       generateProblem()
     }
   }
+
+  const handleModeSelection = (mode) => {
+    setGameMode(mode)
+    setShowModeSelection(false)
+    setScore(0)
+    setHealth(0)
+    setLevel(1)
+    setPokemonStage(0)
+    setMaxHP(50)
+    setMessage('Let\'s learn!')
+  }
+
+  const generateMemoryGame = (difficulty = memoryDifficulty) => {
+    // Difficulty determines number of pairs
+    const pairCounts = {
+      easy: 6,    // 12 cards (4x3 grid)
+      medium: 10,  // 20 cards (5x4 grid)
+      hard: 15     // 30 cards (6x5 grid)
+    }
+    const pairCount = pairCounts[difficulty]
+    const emojis = visualObjects.slice(0, pairCount)
+
+    // Create pairs
+    const pairs = [...emojis, ...emojis].map((emoji, index) => ({
+      id: index,
+      emoji,
+      flipped: false,
+      matched: false
+    }))
+
+    // Shuffle using Fisher-Yates algorithm
+    const shuffled = [...pairs]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+
+    setMemoryCards(shuffled)
+    setFlippedCards([])
+    setMatchedCards([])
+    setMemoryMoves(0)
+    setMemoryTimer(0)
+    setMemoryTimerActive(true)
+    setMessage('Find all the matching pairs!')
+  }
+
+  // Memory game timer
+  useEffect(() => {
+    let interval
+    if (memoryTimerActive && gameMode === 'memory') {
+      interval = setInterval(() => {
+        setMemoryTimer(prev => prev + 1)
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [memoryTimerActive, gameMode])
 
   useEffect(() => {
     console.log('Loading initial Pokemon, chain:', currentChain.name, 'stage:', pokemonStage, 'ID:', currentChain.stages[pokemonStage])
@@ -727,8 +802,10 @@ function App() {
   }, [gameMode])
 
   const handleCorrectAnswer = () => {
-    const newHealth = Math.min(maxHP, health + 15) // Increase health by 15, max maxHP
-    console.log(`HP Change: ${health} → ${newHealth} (+15)`)
+    // Memory game gives less HP since matches are harder to get
+    const hpGain = gameMode === 'memory' ? 10 : 15
+    const newHealth = Math.min(maxHP, health + hpGain)
+    console.log(`HP Change: ${health} → ${newHealth} (+${hpGain})`)
     setHealth(newHealth)
 
     // Check if we should evolve or switch chains
@@ -839,8 +916,10 @@ function App() {
   }
 
   const handleWrongAnswer = () => {
-    const newHealth = Math.max(0, health - 20) // Decrease health by 20, min 0
-    console.log(`HP Change: ${health} → ${newHealth} (-20)`)
+    // Memory game loses less HP since misses are frequent/normal
+    const hpLoss = gameMode === 'memory' ? 5 : 20
+    const newHealth = Math.max(0, health - hpLoss)
+    console.log(`HP Change: ${health} → ${newHealth} (-${hpLoss})`)
     setHealth(newHealth)
 
     // Devolve when health reaches 0 and not at first stage
@@ -876,6 +955,11 @@ function App() {
     let isCorrect = false
     let correctAnswer
     let points
+
+    // SCORING SYSTEM:
+    // - Spelling Mode: 2 points (easy/3 letters), 3 points (medium/4-5 letters), 5 points (hard/6+ letters)
+    // - Math Mode: 1 point (easy/addition), 2 points (medium/subtraction), 3 points (hard/multiplication/division)
+    // Note: Spelling intentionally awards slightly more points to encourage literacy practice
 
     if (gameMode === 'spelling') {
       // Spelling mode - check if word is spelled correctly
@@ -953,8 +1037,108 @@ function App() {
     }
   }
 
+  const handleCardClick = (cardIndex) => {
+    // Prevent clicking if processing or card already flipped/matched
+    if (
+      isProcessingAnswer ||
+      flippedCards.length >= 2 ||
+      flippedCards.includes(cardIndex) ||
+      matchedCards.includes(cardIndex)
+    ) {
+      return
+    }
+
+    const newFlippedCards = [...flippedCards, cardIndex]
+    setFlippedCards(newFlippedCards)
+
+    if (newFlippedCards.length === 2) {
+      setIsProcessingAnswer(true)
+      setMemoryMoves(memoryMoves + 1)
+
+      const [firstIndex, secondIndex] = newFlippedCards
+      const firstCard = memoryCards[firstIndex]
+      const secondCard = memoryCards[secondIndex]
+
+      if (firstCard.emoji === secondCard.emoji) {
+        // Match found!
+        setTimeout(() => {
+          const newMatchedCards = [...matchedCards, firstIndex, secondIndex]
+          setMatchedCards(newMatchedCards)
+          setFlippedCards([])
+          setIsProcessingAnswer(false)
+
+          // Award points
+          const points = 3
+          setScore(score + points)
+          setMessage(`Great match! +${points} pts!`)
+          handleCorrectAnswer()
+          setShowCelebration(true)
+
+          setTimeout(() => {
+            setShowCelebration(false)
+            // Check if all pairs found
+            if (newMatchedCards.length === memoryCards.length) {
+              setMemoryTimerActive(false)
+
+              // Check and save best time
+              const currentTime = memoryTimer
+              const currentBestTime = bestTimes[memoryDifficulty]
+
+              if (!currentBestTime || currentTime < currentBestTime) {
+                const newBestTimes = { ...bestTimes, [memoryDifficulty]: currentTime }
+                setBestTimes(newBestTimes)
+                localStorage.setItem('memoryBestTimes', JSON.stringify(newBestTimes))
+                setMessage(`🎉 New best time! ${currentTime}s! Starting new game...`)
+              } else {
+                setMessage(`All pairs found in ${currentTime}s! Starting new game...`)
+              }
+
+              setTimeout(() => {
+                generateMemoryGame()
+              }, 2000)
+            } else {
+              setMessage('Find the next pair!')
+            }
+          }, 1000)
+        }, 500)
+      } else {
+        // No match - add shake animation
+        setWrongMatchCards(newFlippedCards)
+        setTimeout(() => {
+          setFlippedCards([])
+          setWrongMatchCards([])
+          setIsProcessingAnswer(false)
+          setMessage('Try again!')
+          handleWrongAnswer()
+        }, 1000)
+      }
+    }
+  }
+
   return (
     <div className="game-container">
+      {showModeSelection ? (
+        <div className="mode-selection-screen">
+          <h1 className="selection-title">Choose Your Adventure!</h1>
+          <div className="mode-cards">
+            <div className="mode-card" onClick={() => handleModeSelection('math')}>
+              <div className="mode-card-icon">123</div>
+              <h2 className="mode-card-title">Math Adventure</h2>
+              <p className="mode-card-description">Practice addition, subtraction, multiplication, and division with visual aids!</p>
+            </div>
+            <div className="mode-card" onClick={() => handleModeSelection('spelling')}>
+              <div className="mode-card-icon">ABC</div>
+              <h2 className="mode-card-title">Spelling Adventure</h2>
+              <p className="mode-card-description">Learn to spell words with audio hints and visual clues!</p>
+            </div>
+            <div className="mode-card" onClick={() => handleModeSelection('memory')}>
+              <div className="mode-card-icon">🧠</div>
+              <h2 className="mode-card-title">Memory Game</h2>
+              <p className="mode-card-description">Find matching pairs and train your memory skills!</p>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="game-layout">
         {/* Left Panel - Pokemon */}
         <div className="pokemon-panel">
@@ -1027,21 +1211,16 @@ function App() {
         {/* Right Panel - Game */}
         <div className="game-panel">
           <div className="game-header">
-            <h1 className="game-title">{gameMode === 'spelling' ? 'Spelling Adventure' : 'Math Adventure'}</h1>
-            <div className="mode-toggle">
+            <h1 className="game-title">
+              {gameMode === 'spelling' ? 'Spelling Adventure' : gameMode === 'memory' ? 'Memory Game' : 'Math Adventure'}
+            </h1>
+            <div className="mode-actions">
               <button
-                className={`mode-button ${gameMode === 'math' ? 'active' : ''}`}
-                onClick={() => setGameMode('math')}
+                className="back-button"
+                onClick={() => setShowModeSelection(true)}
                 disabled={isProcessingAnswer}
               >
-                123 Math
-              </button>
-              <button
-                className={`mode-button ${gameMode === 'spelling' ? 'active' : ''}`}
-                onClick={() => setGameMode('spelling')}
-                disabled={isProcessingAnswer}
-              >
-                ABC Spelling
+                ← Change Mode
               </button>
             </div>
           </div>
@@ -1052,7 +1231,79 @@ function App() {
             </div>
 
         <div className="problem-container">
-          {gameMode === 'spelling' && currentWord ? (
+          {gameMode === 'memory' ? (
+            <div className="memory-game">
+              <div className="memory-controls">
+                <div className="difficulty-selector">
+                  <button
+                    className={`difficulty-btn ${memoryDifficulty === 'easy' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMemoryDifficulty('easy')
+                      generateMemoryGame('easy')
+                    }}
+                    disabled={isProcessingAnswer}
+                  >
+                    Easy (6 pairs)
+                  </button>
+                  <button
+                    className={`difficulty-btn ${memoryDifficulty === 'medium' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMemoryDifficulty('medium')
+                      generateMemoryGame('medium')
+                    }}
+                    disabled={isProcessingAnswer}
+                  >
+                    Medium (10 pairs)
+                  </button>
+                  <button
+                    className={`difficulty-btn ${memoryDifficulty === 'hard' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMemoryDifficulty('hard')
+                      generateMemoryGame('hard')
+                    }}
+                    disabled={isProcessingAnswer}
+                  >
+                    Hard (15 pairs)
+                  </button>
+                </div>
+              </div>
+
+              <div className="memory-stats">
+                <div className="memory-stat">
+                  ⏱️ Time: {Math.floor(memoryTimer / 60)}:{(memoryTimer % 60).toString().padStart(2, '0')}
+                </div>
+                <div className="memory-stat">🎯 Moves: {memoryMoves}</div>
+                <div className="memory-stat">
+                  ✨ Pairs: {matchedCards.length / 2} / {memoryCards.length / 2}
+                </div>
+                {bestTimes[memoryDifficulty] && (
+                  <div className="memory-stat best-time">
+                    🏆 Best: {Math.floor(bestTimes[memoryDifficulty] / 60)}:{(bestTimes[memoryDifficulty] % 60).toString().padStart(2, '0')}
+                  </div>
+                )}
+              </div>
+
+              <div className={`memory-grid difficulty-${memoryDifficulty}`}>
+                {memoryCards.map((card, index) => (
+                  <div
+                    key={index}
+                    className={`memory-card ${
+                      flippedCards.includes(index) || matchedCards.includes(index) ? 'flipped' : ''
+                    } ${matchedCards.includes(index) ? 'matched' : ''} ${
+                      wrongMatchCards.includes(index) ? 'wrong-match' : ''
+                    }`}
+                    style={{ '--index': index }}
+                    onClick={() => handleCardClick(index)}
+                  >
+                    <div className="memory-card-inner">
+                      <div className="memory-card-front">?</div>
+                      <div className="memory-card-back">{card.emoji}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : gameMode === 'spelling' && currentWord ? (
             <div className="spelling-problem">
               <div className="spelling-hint">
                 <div className="hint-emoji">{currentWord.hint}</div>
@@ -1065,16 +1316,16 @@ function App() {
                 <button
                   className="speak-button"
                   onClick={() => speakWord(currentWord.word)}
-                  disabled={isProcessingAnswer}
-                  title="Hear the word"
+                  disabled={isProcessingAnswer || !isSpeechSupported}
+                  title={isSpeechSupported ? "Hear the word" : "Audio not supported in this browser"}
                 >
                   <MdVolumeUp /> Play Word
                 </button>
                 <button
                   className="speak-button spell-out"
                   onClick={() => spellOut(currentWord.word)}
-                  disabled={isProcessingAnswer}
-                  title="Spell it out letter by letter"
+                  disabled={isProcessingAnswer || !isSpeechSupported}
+                  title={isSpeechSupported ? "Spell it out letter by letter" : "Audio not supported in this browser"}
                 >
                   <MdVolumeUp /> Spell It Out
                 </button>
@@ -1198,28 +1449,32 @@ function App() {
           ) : null}
         </div>
 
-        <div className="answer-section">
-          <input
-            type={gameMode === 'spelling' ? 'text' : 'number'}
-            className="answer-input"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your answer"
-            autoFocus
-          />
-          <button
-            className="submit-button"
-            onClick={checkAnswer}
-            disabled={answer === '' || isProcessingAnswer}
-          >
-            Check Answer
-          </button>
-        </div>
+        {gameMode !== 'memory' && (
+          <>
+            <div className="answer-section">
+              <input
+                type={gameMode === 'spelling' ? 'text' : 'number'}
+                className="answer-input"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your answer"
+                autoFocus
+              />
+              <button
+                className="submit-button"
+                onClick={checkAnswer}
+                disabled={answer === '' || isProcessingAnswer}
+              >
+                Check Answer
+              </button>
+            </div>
 
-        <button className="skip-button" onClick={generateQuestion} title="Skip to next question">
-          <MdSkipNext />
-        </button>
+            <button className="skip-button" onClick={generateQuestion} title="Skip to next question">
+              <MdSkipNext />
+            </button>
+          </>
+        )}
 
         {showCelebration && (
           <div className="confetti">
@@ -1235,6 +1490,7 @@ function App() {
           </div>
         </div>
       </div>
+      )}
 
       {showEvolution && pokemonData && (
         <div className="evolution-overlay">
