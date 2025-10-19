@@ -5,6 +5,8 @@ export const useSpeech = () => {
   const [isSupported, setIsSupported] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [voices, setVoices] = useState([])
+  const [voicesReady, setVoicesReady] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   useEffect(() => {
     // Check if browser supports speech synthesis
@@ -14,14 +16,31 @@ export const useSpeech = () => {
       // Load available voices
       const loadVoices = () => {
         const availableVoices = window.speechSynthesis.getVoices()
-        setVoices(availableVoices)
+        console.log('🔊 Voices loaded:', availableVoices.length)
+        if (availableVoices.length > 0) {
+          setVoices(availableVoices)
+          setVoicesReady(true)
+          console.log('✓ Voices ready:', availableVoices.map(v => v.name).slice(0, 3).join(', '))
+        } else {
+          console.warn('⚠ No voices available yet')
+        }
       }
 
+      // Initial load
       loadVoices()
 
-      // Chrome loads voices asynchronously
+      // Chrome loads voices asynchronously - set up listener
       if (window.speechSynthesis.onvoiceschanged !== undefined) {
         window.speechSynthesis.onvoiceschanged = loadVoices
+      }
+
+      // Also try loading after delays (some browsers need this)
+      const timeouts = [100, 300, 500, 1000, 2000].map(delay =>
+        setTimeout(loadVoices, delay)
+      )
+
+      return () => {
+        timeouts.forEach(timeout => clearTimeout(timeout))
       }
     }
   }, [])
@@ -32,33 +51,51 @@ export const useSpeech = () => {
       return
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel()
-
+    // Create utterance with minimal configuration
     const utterance = new SpeechSynthesisUtterance(text)
-
-    // Configure voice settings for kids
-    utterance.rate = options.rate || 0.9 // Slightly slower for clarity
-    utterance.pitch = options.pitch || 1.1 // Slightly higher pitch
+    utterance.rate = options.rate || 0.9
+    utterance.pitch = options.pitch || 1.1
     utterance.volume = options.volume || 1
+    utterance.lang = 'en-US'
 
-    // Try to use a child-friendly voice if available
-    const preferredVoice = voices.find(
-      voice =>
-        voice.lang.startsWith('en') &&
-        (voice.name.includes('Female') || voice.name.includes('Child'))
-    ) || voices.find(voice => voice.lang.startsWith('en'))
+    // Don't set a custom voice - just use browser default
+    // This avoids issues with voice loading in privacy-focused browsers
 
-    if (preferredVoice) {
-      utterance.voice = preferredVoice
+    utterance.onstart = () => {
+      setIsSpeaking(true)
+      setIsBlocked(false) // If it started, it's not blocked
     }
 
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
+    utterance.onend = () => {
+      setIsSpeaking(false)
+    }
 
-    window.speechSynthesis.speak(utterance)
-  }, [isSupported, voices])
+    utterance.onerror = (event) => {
+      console.error('❌ Speech error:', event.error)
+      setIsSpeaking(false)
+
+      // Detect if the API is being blocked (common in Brave browser)
+      if (event.error === 'synthesis-failed' || event.error === 'synthesis-unavailable') {
+        setIsBlocked(true)
+        console.warn('⚠️ Speech Synthesis appears to be blocked by your browser.')
+        console.warn('   If you\'re using Brave, click the Shields icon and set')
+        console.warn('   Fingerprinting protection to "Standard" or "Off" for this site.')
+      }
+    }
+
+    try {
+      // Cancel any previous speech without delay
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel()
+      }
+
+      window.speechSynthesis.speak(utterance)
+    } catch (error) {
+      console.error('❌ Speak() failed:', error)
+      setIsSpeaking(false)
+      setIsBlocked(true)
+    }
+  }, [isSupported])
 
   const speakWord = useCallback((word) => {
     // Speak the word slowly and clearly for spelling
@@ -71,17 +108,49 @@ export const useSpeech = () => {
   }, [speak])
 
   const spellOut = useCallback((word) => {
+    if (!isSupported) {
+      console.warn('Speech synthesis not supported')
+      return
+    }
+
+    // Cancel any ongoing speech first
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      window.speechSynthesis.cancel()
+    }
+
+    console.log('📝 Spelling out:', word)
+
     // Spell out the word letter by letter with pauses
     const letters = word.split('')
-    let delay = 0
+    let delay = 200
 
-    letters.forEach((letter, index) => {
+    letters.forEach((letter) => {
       setTimeout(() => {
-        speakLetter(letter)
+        const utterance = new SpeechSynthesisUtterance(letter)
+        utterance.rate = 0.7
+        utterance.pitch = 1.3
+        utterance.lang = 'en-US'
+        utterance.volume = 1
+
+        // Don't set custom voice - use browser default
+
+        utterance.onerror = (event) => {
+          console.error(`❌ Letter "${letter}" error:`, event.error)
+          if (event.error === 'synthesis-failed' || event.error === 'synthesis-unavailable') {
+            setIsBlocked(true)
+          }
+        }
+
+        try {
+          window.speechSynthesis.speak(utterance)
+        } catch (error) {
+          console.error('❌ Failed to speak letter:', letter, error)
+          setIsBlocked(true)
+        }
       }, delay)
-      delay += 800 // 800ms between letters
+      delay += 1000
     })
-  }, [speakLetter])
+  }, [isSupported])
 
   const cancel = useCallback(() => {
     if (isSupported) {
@@ -93,6 +162,8 @@ export const useSpeech = () => {
   return {
     isSupported,
     isSpeaking,
+    voicesReady,
+    isBlocked,
     speak,
     speakWord,
     speakLetter,

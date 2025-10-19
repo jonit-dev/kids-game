@@ -18,6 +18,8 @@ function App() {
 
   // Spelling mode state
   const [currentWord, setCurrentWord] = useState(null)
+  const [showSpellingHint, setShowSpellingHint] = useState(false)
+  const [spellingAttempts, setSpellingAttempts] = useState(0)
 
   // Memory game state
   const [memoryCards, setMemoryCards] = useState([])
@@ -56,7 +58,7 @@ function App() {
   const [isProcessingAnswer, setIsProcessingAnswer] = useState(false) // Prevent multiple submissions
 
   // Text-to-speech hook
-  const { speakWord, spellOut, isSupported: isSpeechSupported } = useSpeech()
+  const { speakWord, spellOut, isSupported: isSpeechSupported, voicesReady, isBlocked } = useSpeech()
 
   // Pokemon evolution chains - using PokeAPI IDs (Verified with PokeAPI)
   const evolutionChains = [
@@ -659,12 +661,14 @@ function App() {
     setCurrentWord(word)
     setCurrentEmoji(word.hint)
     setAnswer('')
-    setMessage('Spell this word!')
+    setShowSpellingHint(false)
+    setSpellingAttempts(0)
+    setMessage('Listen and spell the word!')
 
-    // Automatically speak the word
+    // Automatically speak the word after a short delay
     setTimeout(() => {
       speakWord(word.word)
-    }, 300)
+    }, 500)
   }
 
   const generateProblem = () => {
@@ -1309,12 +1313,21 @@ function App() {
                 <div className="hint-emoji">{currentWord.hint}</div>
                 <div className="hint-text">{currentWord.category}</div>
               </div>
+
               <div className="spelling-instruction">
-                Listen and spell the word
+                Listen carefully and type the word
               </div>
+
+              {showSpellingHint && (
+                <div className="spelling-hint-display">
+                  First letter: <span className="hint-letter">{currentWord.word[0].toUpperCase()}</span>
+                  <div className="hint-sublabel">Word length: {currentWord.word.length} letters</div>
+                </div>
+              )}
+
               <div className="spelling-buttons">
                 <button
-                  className="speak-button"
+                  className="speak-button primary"
                   onClick={() => speakWord(currentWord.word)}
                   disabled={isProcessingAnswer || !isSpeechSupported}
                   title={isSpeechSupported ? "Hear the word" : "Audio not supported in this browser"}
@@ -1322,17 +1335,39 @@ function App() {
                   <MdVolumeUp /> Play Word
                 </button>
                 <button
-                  className="speak-button spell-out"
+                  className="speak-button"
                   onClick={() => spellOut(currentWord.word)}
                   disabled={isProcessingAnswer || !isSpeechSupported}
                   title={isSpeechSupported ? "Spell it out letter by letter" : "Audio not supported in this browser"}
                 >
                   <MdVolumeUp /> Spell It Out
                 </button>
+                <button
+                  className="speak-button hint-btn"
+                  onClick={() => setShowSpellingHint(true)}
+                  disabled={isProcessingAnswer || showSpellingHint}
+                  title="Show hint"
+                >
+                  💡 Hint
+                </button>
               </div>
+
               {!isSpeechSupported && (
                 <div className="speech-warning">
-                  🔇 Audio not supported in this browser
+                  🔇 Audio not supported - please use a modern browser
+                </div>
+              )}
+
+              {isSpeechSupported && isBlocked && (
+                <div className="speech-warning blocked">
+                  🛡️ <strong>Audio is blocked!</strong>
+                  <div className="warning-details">
+                    Using Brave browser? Click the Shield icon (🛡️) in the address bar,
+                    then set <strong>Fingerprinting protection</strong> to "Standard" or "Off" for this site.
+                  </div>
+                  <div className="warning-note">
+                    You can still play! Just type what you see in the hint.
+                  </div>
                 </div>
               )}
             </div>
