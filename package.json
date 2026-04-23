@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "deploy": "vite build && npx wrangler pages deploy --commit-dirty=true"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
